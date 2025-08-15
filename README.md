@@ -179,65 +179,7 @@ curl -X POST http://127.0.0.1:8000/scrape \
   }'
 ```
 
----
 
-## 6) Project structure
-
-```
-Scraping-AI-Agent/
-├─ app/
-│  ├─ __init__.py
-│  ├─ main.py
-│  ├─ config.py
-│  ├─ schemas.py
-│  ├─ deps.py
-│  ├─ agents/
-│  │  ├─ retail_agent.py
-│  ├─ integrations/
-│  │  ├─ playwright_fetcher.py
-│  │  ├─ http_fetcher.py
-│  │  ├─ browser_use_client.py    # optional
-│  ├─ parsers/
-│  │  ├─ extractors.py
-│  ├─ utils/
-│  │  ├─ logger.py
-├─ tests/
-│  ├─ test_extractors.py
-│  ├─ test_price_normalization.py
-├─ requirements.txt
-├─ requirements.optional.txt
-├─ .env.example
-├─ Dockerfile
-├─ docker-compose.yml
-├─ Makefile
-├─ README.md
-```
-
----
-
-## 7) Source code (copy each file into your project)
-
-### `requirements.txt`
-
-```txt
-fastapi>=0.112
-uvicorn[standard]>=0.30
-pydantic>=2.7
-python-dotenv>=1.0
-httpx>=0.27
-beautifulsoup4>=4.12
-selectolax>=0.3
-playwright>=1.45
-anyio>=4.4
-```
-
-### `requirements.optional.txt`
-
-```txt
-# Optional integrations
-browser-use>=0.1.0
-openai>=1.40
-```
 
 ### `.env.example`
 
