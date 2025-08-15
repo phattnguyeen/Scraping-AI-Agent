@@ -17,12 +17,15 @@ class Products(BaseModel):
 
 class ProductsList(BaseModel):
     products: List[Products] = Field(..., description="List of products")
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Optional metadata about the product list")
+    limit: int = Field(..., description="Limit on the number of products to return")
+    total: int = Field(..., description="Total number of products found")
 
-class Prompt(BaseModel):
-    prompt: str = Field(..., description="The prompt to be used for scraping or processing")
-    context: Optional[str] = Field(None, description="Optional context to provide additional information for the prompt")
-    
+
+# in app/schemas/products.py
+class ProductInput(BaseModel):
+    product_name: str
+    limit: int = 10
+    prompt: Optional[str] = None
 
 
 

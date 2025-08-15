@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Optional, Dict, Any, List
 
-class ProductCreate(BaseModel):
+class Products(BaseModel):
     product_id: str = Field(..., description="Unique identifier for the product")
     product_name: str = Field(..., description="Name of the product")
     category: str = Field(..., description="Category of the product")
@@ -14,4 +14,19 @@ class ProductCreate(BaseModel):
     availability: bool = Field(..., description="Availability status of the product")
     url: str = Field(..., description="URL to the product page")
     scraped_at: str = Field(default_factory=lambda: datetime.now().isoformat(), description="Timestamp when the data was scraped")
+
+class ProductsList(BaseModel):
+    products: List[Products] = Field(..., description="List of products")
+    limit: int = Field(..., description="Limit on the number of products to return")
+    total: int = Field(..., description="Total number of products found")
+    next_page: Optional[str] = Field(None, description="URL for the next page of results, if available")
+    previous_page: Optional[str] = Field(None, description="URL for the previous page of results, if available")
+    metadata: Optional[Dict[str, Any]] = Field(None, description="Optional metadata about the product list")
+
+class Prompt(BaseModel):
+    prompt: str = Field(..., description="The prompt to be used for scraping or processing")
+    context: Optional[str] = Field(None, description="Optional context to provide additional information for the prompt")
+    
+
+
 
