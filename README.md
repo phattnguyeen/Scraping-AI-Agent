@@ -196,4 +196,12 @@ BROWSER_USE_ENABLED=false
 BROWSER_USE_MODEL=gpt-4o-mini
 BROWSER_USE_TEMPERATURE=0
 ```
+Update for run test
+```
+```
+Cloning source
+```
+git clone https://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@github.com/phattnguyeen/Scraping-AI-Agent.git
+
+```
 
