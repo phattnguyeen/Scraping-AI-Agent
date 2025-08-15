@@ -198,6 +198,7 @@ BROWSER_USE_TEMPERATURE=0
 ```
 Update for run test
 ```
+python -m app.service.scraping2
 ```
 Cloning source
 ```
