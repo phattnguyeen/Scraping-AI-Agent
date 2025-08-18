@@ -6,10 +6,13 @@ from app.schemas.products import Products, ProductsList, ProductInput
 import asyncio
 from app.db.create import get_db
 # from app.service.scraping import ScrapeResponse
-from browser_use import Agent, BrowserConfig, Browser, Controller
+from browser_use import Agent, BrowserConfig, Browser, Controller, ActionResult
 from urllib.parse import urlparse
+import pandas as pd
 
 from browser_use.llm import ChatOpenAI
+from datetime import datetime
+import uuid
 
 # Load .env
 load_dotenv()
@@ -20,6 +23,29 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 import json
+import json
+from typing import Any
+
+def handle_llm_response(raw_response: str) -> ActionResult:
+    """
+    Parse the LLM response into an ActionResult, 
+    trying JSON first if possible.
+    """
+    result = ActionResult()
+
+    try:
+        # Try to parse as JSON
+        parsed: Any = json.loads(raw_response)
+        if isinstance(parsed, dict):
+            result.extracted_json = parsed
+        else:
+            result.extracted_content = raw_response  # fallback
+    except json.JSONDecodeError:
+        # Not valid JSON → fallback to plain text
+        result.extracted_content = raw_response
+
+    return result
+
 
 def extract_final_json(agent_result):
     # If final_result is already a dict
@@ -66,7 +92,7 @@ async def scraping_products(
     await browser.start()
 
     llm = ChatOpenAI(
-        model="gpt-4.1-mini",
+        model="gpt-5",
         temperature=0,
         api_key=os.getenv("OPENAI_API_KEY")
     )
@@ -135,14 +161,14 @@ async def scraping_products(
                     "price": price_value,
                     "seller": seller
                 })
-        return results[:limit]
+        return ActionResult(extracted_json={"products": results[:limit]})
 
     # Use prompt if provided, otherwise product name
     search_query = input_data.product_name if input_data.prompt else input_data.prompt
     limit = input_data.limit
 
     task_instruction = f"""
-    1. Use 'search_google' with query: "{search_query} giá rẻ nhất"
+    1. Use 'search_google' with query: "{search_query} giá rẻ hoặc tốt nhất"
     
     2. Find the best price for {search_query} across major Vietnamese tech retailers such as:
        FPT Shop, Thế Giới Di Động, CellphoneS, Hoàng Hà Mobile, and more.
@@ -159,21 +185,102 @@ async def scraping_products(
     6. Identify the lowest offer per product.
     7. Stop after finding the target product.
     8. Output only valid JSON matching the ProductList schema — no markdown, no explanations.
+    9. Export the results to a CSV file named 'agent_output.csv' with columns:
+       - productName
+       - sku
+       - finalPriceVND
+       - brand
+       - retailer
+       - url
+       - stockStatus
+       - scrapedAt
     """
 
+    # agent = Agent(browser=browser, llm=llm, task=task_instruction, controller=controller)
+    # agent_result = await agent.run()
+    # final_json = agent_result.final_result()
+    # final_result = extract_final_json(final_json)
+    # print("=== RAW AGENT OUTPUT ===")
+    # print(final_json)
+    # Run the agent
     agent = Agent(browser=browser, llm=llm, task=task_instruction, controller=controller)
     agent_result = await agent.run()
-    final_json = agent_result.final_result()
+    final_result_obj = agent_result.final_result()
+
+
     print("=== RAW AGENT OUTPUT ===")
-    print(final_json)
+    print(final_result_obj)
+    print("Data exported to agent_output.csv")
+
+    # --- Step 3: Normalize results (extract product list) ---
+    if isinstance(final_result_obj, dict) and "products" in final_result_obj:
+        product_list = final_result_obj["products"]
+    else:
+        product_list = final_result_obj if isinstance(final_result_obj, list) else []
+    
+    print(f"Found {len(product_list)} products in the results")
+    print("=== Normalized Product List ===")
+    for item in product_list:
+        print(f"Product: {item.get('title', 'N/A')}, Price: {item.get('price', 'N/A')}, URL: {item.get('url', 'N/A')}")
+    # If no products found, return empty list
+    if not product_list:
+        print("No products found in the results.")
+        return ProductsList(products=[])
+
+    # --- Step 4: Save to DB ---
+    saved_rows = []
+    for item in product_list:
+        try:
+            product = Products(
+                id=uuid.uuid4(),
+                product_name=item.get("productName", ""),
+                category="Laptop",  # TODO: parse category dynamically if possible
+                brand="Lenovo",     # TODO: detect from productName (now hardcoded)
+                model=item.get("sku", None),
+                seller_name=item.get("seller", item.get("retailer", "")),
+                price=item.get("finalPriceVND", item.get("currentPriceVND", 0.0)),
+                currency="VND",
+                availability="in stock" in item.get("stockStatus", "").lower(),
+                url=item.get("url", ""),
+                scraped_at=datetime.fromisoformat(item.get("scrapedAt").replace("Z", "+00:00"))
+            )
+
+            # Prevent duplicate insert (check by model + seller)
+            existing = db.query(Products).filter(
+                Products.model == product.model,
+                Products.seller_name == product.seller_name
+            ).first()
+
+            if not existing:
+                db.add(product)
+                saved_rows.append({
+                    "product_name": product.product_name,
+                    "model": product.model,
+                    "seller": product.seller_name,
+                    "price": float(product.price),
+                    "url": product.url
+                })
+
+        except Exception as e:
+            print(f"⚠️ Error saving product: {e}")
+
+    db.commit()
+    print(f" {len(saved_rows)} new products saved to DB")
+
+    # --- Step 5: Export the DB-inserted records to CSV (normalized view) ---
+    if saved_rows:
+        pd.DataFrame(saved_rows).to_csv("db_saved_products.csv", index=False, encoding="utf-8-sig")
+        print("Normalized DB-saved products exported to db_saved_products.csv")
+
+
 
 if __name__ == "__main__":
      # Example run
     db = next(get_db())
-    input_data = ProductInput(product_name="iphone 15", limit=5, prompt="iPhone 15 Pro Max, 256GB, Silver")
+    input_data = ProductInput(product_name="83LK0079VN", limit=5, prompt="83LK0079VN giá rẻ nhất")
     results = asyncio.run(scraping_products(db, input_data))
-    print("Scraped Products:")
-    print(results)
+    # print("Scraped Products:")
+    # print(results)
 
 
     
