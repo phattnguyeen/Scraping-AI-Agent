@@ -205,6 +205,7 @@ Cloning source
 git clone https://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@github.com/phattnguyeen/Scraping-AI-Agent.git
 ```
 Some paper to ref
+
 [text](https://www.analyticsvidhya.com/blog/2025/02/run-omniparser-v2-locally/)
 
 [text](https://github.com/browser-use/browser-use/issues/578)
