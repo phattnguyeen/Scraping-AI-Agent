@@ -183,16 +183,16 @@ async def scraping_products(db: Session, input_data: ProductInput) -> ProductsLi
     print("=== RAW AGENT OUTPUT ===")
     print(final_result_obj)
    # Ensure it's a dict, not a raw string
-    if isinstance(final_result_obj, str):
-        try:
-            final_result_obj = json.loads(final_result_obj)
-        except json.JSONDecodeError:
-            print("⚠️ Could not decode final_result_obj, got raw string")
-            final_result_obj = {}
+    # if isinstance(final_result_obj, str):
+    #     try:
+    #         final_result_obj = json.loads(final_result_obj)
+    #     except json.JSONDecodeError:
+    #         print("⚠️ Could not decode final_result_obj, got raw string")
+    #         final_result_obj = {}
 
-    # Now safe to use .get()
-    products = final_result_obj.get("products", [])
-    return ProductsList(products=products, total=len(products), limit=limit)
+    # # Now safe to use .get()
+    # products = final_result_obj.get("products", [])
+    # return ProductsList(products=products, total=len(products), limit=limit)
 
     # return ProductsList(products=final_result_obj.get("products", []))
 
