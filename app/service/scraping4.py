@@ -4,7 +4,8 @@ from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 from app.schemas.products import Products, ProductsList, ProductInput
 import asyncio
-from app.db.create import get_db, Product
+# from app.db.create import get_db, Product
+from app.db.mydb import get_db
 from browser_use import Agent, BrowserConfig, Browser, Controller, ActionResult
 from urllib.parse import urlparse
 import pandas as pd
