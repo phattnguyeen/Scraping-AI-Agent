@@ -1,0 +1,26 @@
+services:
+    nopcommerce_web:
+        build: .
+        container_name: nopcommerce
+        ports:
+            - "80:80"
+        depends_on:
+            - nopcommerce_database
+        volumes:
+            - nopcommerce_appdata:/app/App_Data   # nơi nopCommerce lưu file upload, ảnh, logs
+
+    nopcommerce_database:
+        image: "mcr.microsoft.com/mssql/server:2019-latest"
+        container_name: nopcommerce_mssql_server
+        environment:
+            SA_PASSWORD: "nopCommerce_db_password"
+            ACCEPT_EULA: "Y"
+            MSSQL_PID: "Express"
+        volumes:
+            - nopcommerce_data:/var/opt/mssql   # mount volume
+        ports:
+            - "1433:1433"   # expose SQL Server ra ngoài
+
+volumes:
+    nopcommerce_data:
+    nopcommerce_appdata:

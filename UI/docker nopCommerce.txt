@@ -1,0 +1,24 @@
+git clone https://github.com/nopSolutions/nopCommerce.git
+
+cd nopCommerce
+
+docker compose build
+
+docker compose up -d
+
+localhost
+
+
+[docker-compose.yml] -> port "8080:80"
+docker compose up -d
+
+db 
+- serve: nopcommerce_database
+- user: sa
+- pwd: nopCommerce_db_password
+- dbname: mydb
+
+docker compose up -d
+
+localhost:8080
+localhost:8080/admin
