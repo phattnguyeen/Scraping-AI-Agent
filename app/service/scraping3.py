@@ -30,7 +30,7 @@ def save_product_to_db(db: Session, item: dict):
         product = Products(
             id=uuid.uuid4(),
             product_name=item.get("productName") or item.get("title", ""),
-            category="Laptop",  # TODO: detect dynamically
+            category= item.get("category", "Electronics"),  # TODO: detect dynamically
             brand="Lenovo",     # TODO: detect dynamically
             model=item.get("sku", None),
             seller_name=item.get("seller", item.get("retailer", "")),
@@ -155,14 +155,15 @@ async def scraping_products(db: Session, input_data: ProductInput) -> ProductsLi
        FPT Shop, Thế Giới Di Động, CellphoneS, Hoàng Hà Mobile, and more.
        For each retailer:
            1. Navigate to their website and search for the exact product
-           2. Record the current price, original price if on sale, and any available discounts
+           2. Record the product's name, model, category, brand and seller information, url website and time when the data was scraped.
+           3. Record the current price, original price if on sale, and any available discounts.
            3. Calculate the final price after discounts and promotions
            4. Note shipping costs and estimated delivery time
            5. Check if the product is in stock
            6. Record the product's name, model, and seller information, url website and time when the data was scraped
     3. Use 'extract_tech_results' with limit={limit}
     4. Return the extracted results as your final answer.
-    5. Deduplicate results by product name or SKU.
+    5. Deduplicate results by product name or SKU or brand seller.
     6. Identify the lowest offer per product.
     7. Stop after finding the target product.
     8. Output only valid JSON matching the ProductList schema — no markdown, no explanations.
