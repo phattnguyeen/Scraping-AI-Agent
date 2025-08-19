@@ -19,6 +19,7 @@ load_dotenv()
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+print(f"Using OpenAI API Key: {OPENAI_API_KEY[:5]}...")
 
 # --- Helpers ---
 def save_product_to_db(db: Session, item: dict):
