@@ -361,6 +361,7 @@ async def scrape_product_data(searchQuery: str, limit: int) -> list[ProductCreat
 
     10. **Format:** The final output MUST be a valid JSON object with a `products` array. This array will contain the cheapest product(s) up to the `{limit}` or be empty.
     """
+    
     agent = Agent(
         browser=browser,
         llm=llm,
@@ -369,61 +370,6 @@ async def scrape_product_data(searchQuery: str, limit: int) -> list[ProductCreat
         use_vision= True
     )
 
-    # agent_result = await agent.run()
-    # result = agent_result.final_result()
-    # print("RAW AGENT RESULT:")
-    # print(f"Agent Result: {result}")
-    
-    #  # 2. Define and create the output directory
-    # output_dir = "output"
-    # os.makedirs(output_dir, exist_ok=True)
-    # print(f"Output directory '{output_dir}' is ready.")
-
-    # # 3. Save the full agent result to a JSON file
-    # # This gives you a complete, machine-readable record of the output.
-    # json_filepath = os.path.join(output_dir, "agent_output.json")
-    # try:
-    #     with open(json_filepath, 'w', encoding='utf-8') as json_file:
-    #         # The 'result' variable (a dictionary) is dumped into the JSON file
-    #         # ensure_ascii=False correctly handles Vietnamese characters.
-    #         # indent=4 makes the file easy to read for humans.
-    #         json.dump(result, json_file, ensure_ascii=False, indent=4)
-    #     print(f"✅ Successfully saved full result to JSON: {json_filepath}")
-    # except Exception as e:
-    #     print(f"❌ Error saving to JSON: {e}")
-
-    # # 4. Extract product data and save it to a CSV file
-    # # This gives you a spreadsheet-friendly format.
-    # csv_filepath = os.path.join(output_dir, "products_output.csv")
-    # try:
-    #     # Check if the 'products' key exists and contains a list of products
-    #     if 'products' in result and isinstance(result['products'], list) and result['products']:
-    #         products_data = result['products']
-            
-    #         # Use the keys from the first product dictionary as the CSV headers
-    #         headers = products_data[0].keys()
-
-    #         with open(csv_filepath, 'w', newline='', encoding='utf-8') as csv_file:
-    #             # DictWriter is perfect for writing a list of dictionaries to CSV
-    #             writer = csv.DictWriter(csv_file, fieldnames=headers)
-    #             writer.writeheader()  # Writes the column titles
-    #             writer.writerows(products_data) # Writes all the product data
-    #         print(f"✅ Successfully saved product data to CSV: {csv_filepath}")
-    #     else:
-    #         print("ℹ️ No product data found in the result to write to CSV.")
-    # except Exception as e:
-    #     print(f"❌ Error saving to CSV: {e}")
-
-    # except Exception as e:
-    #     print(f"An critical error occurred during the agent run: {e}")
-
-    # finally:
-    #     # 5. This 'finally' block ensures the browser is always closed,
-    #     #    preventing leftover processes, even if the script above fails.
-    #     print("-" * 30)
-    #     print("Stopping browser...")
-    #     await browser.stop()
-    #     print("Browser stopped. Process finished.")
 
     try:
         # 1. Run the agent to get the result
@@ -521,6 +467,10 @@ async def scrape_product_data(searchQuery: str, limit: int) -> list[ProductCreat
         print("Stopping browser...")
         await browser.stop()
         print("Browser stopped. Process finished.")
+    
+    
+
+
 
     
 

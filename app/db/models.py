@@ -23,3 +23,5 @@ class Product(Base):
 
     def __repr__(self):
         return f"<Product(Id={self.Id}, Name='{self.ProductName}', Price={self.Price})>"
+
+

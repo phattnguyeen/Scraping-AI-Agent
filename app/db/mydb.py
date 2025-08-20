@@ -3,12 +3,12 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine, MetaData, Table, select
 
 # Database connection info
-# DATABASE_URL = "mssql+pyodbc://sa:nopCommerce_db_password@172.16.7.106/mydb?driver=ODBC+Driver+17+for+SQL+Server"
+DATABASE_URL = "mssql+pyodbc://sa:nopCommerce_db_password@172.16.7.106/mydb?driver=ODBC+Driver+17+for+SQL+Server"
 
-DATABASE_URL = (
-    "mssql+pyodbc://@NTRUONGPHAT\\MSSQLSERVER02/"
-    "test_db?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes"
-)
+# DATABASE_URL = (
+#     "mssql+pyodbc://@NTRUONGPHAT\\MSSQLSERVER02/"
+#     "test_db?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes"
+# )
 
 
 
