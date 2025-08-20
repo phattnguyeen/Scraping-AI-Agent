@@ -16,8 +16,7 @@ import json
 from typing import Any
 from bs4 import BeautifulSoup
 import re
-from urllib.parse import urlparse
-load_dotenv()
+import csv
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -229,43 +228,302 @@ async def scrape_product_data(searchQuery: str, limit: int) -> list[ProductCreat
         api_key=OPENAI_API_KEY
     )
 
+    # task_instruction = f"""
+    # You are a specialized scraper for Vietnamese retailers focusing ONLY on servers and laptops.
+
+    # TASK: Search for "{searchQuery}" across major Vietnamese laptop and server retailers.
+
+    # INSTRUCTIONS:
+    # 1. Use 'search_google_laptop_server' with query: "{searchQuery}"
+    # 2. Use 'extract_laptop_server_results' with limit={limit}
+    # 3. Focus ONLY on these retailers (skip others): 
+    #    FPT Shop, Thế Giới Di Động, CellphoneS, Hoàng Hà Mobile, Phong Vũ, GearVN, 
+    #    An Phát PC, Phúc Anh, Trần Anh, Nguyễn Kim, MediaMart, Điện Máy Xanh, Viettel Store, Vinaphone
+    # 4. Extract only Laptops and Servers.
+    # 5. Extract fields:
+    #    - ProductName
+    #    - Brand
+    #    - SKU
+    #    - FinalPriceVND
+    #    - Retailer
+    #    - Url
+    #    - StockStatus
+    #    - Category (Laptop/Server)
+    #    - ScrapedAt
+    # 6. Ensure all prices are in VND.
+    # 7. Deduplicate by brand, model, seller.
+    # 8. Return only valid JSON with `products` array.
+    # """
+    # task_instruction = f"""
+    # You are a specialized and highly efficient scraper for Vietnamese retailers, optimized to find the single cheapest available Laptop or Server.
+
+    # TASK: Identify and return only the single CHEAPEST **in-stock** offering for "{searchQuery}" from a curated list of Vietnamese retailers.
+
+    # INSTRUCTIONS:
+
+    # 1.  **Analyze and Categorize:** First, determine if the `"{searchQuery}"` refers to a 'Laptop' or a 'Server'. This is crucial for selecting the correct list of retailers to search.
+
+    # 2.  **Select Retailer List:** Based on the category determined in Step 1, use one of the following specialized lists:
+    #     *   **If 'Laptop':**
+    #         *   FPT Shop, Thế Giới Di Động, CellphoneS, Hoàng Hà Mobile, Phong Vũ, GearVN, An Phát PC, Phúc Anh, Nguyễn Kim, MediaMart, Điện Máy Xanh, Viettel Store.
+    #     *   **If 'Server':**
+    #         *   An Phát PC, Phúc Anh, Phong Vũ, Máy Chủ Việt, Thế Giới Máy Chủ, Việt Nam Server, KDATA.
+
+    # 3.  **Targeted Google Search:** Use the `search_google_laptop_server` function with queries designed to find the lowest price. Use a variety of terms, such as:
+    #     *   "giá rẻ nhất {searchQuery}" (cheapest price)
+    #     *   "khuyến mãi {searchQuery}" (promotion)
+    #     *   "thanh lý {searchQuery}" (clearance)
+    #     *   "{searchQuery} giá tốt nhất" (best price)
+
+    # 4.  **Wider Data Extraction:** Use the `extract_laptop_server_results` function with an expanded `limit={limit}` to create a large pool of products for analysis.
+
+    # 5.  **Extract Key Fields:**
+    #     *   ProductName
+    #     *   Brand
+    #     *   SKU
+    #     *   **FinalPriceVND** (Critical)
+    #     *   Retailer
+    #     *   Url
+    #     *   **StockStatus** (Critical)
+    #     *   Category ('Laptop' or 'Server')
+    #     *   ScrapedAt
+
+    # 6.  **Normalize Price Data:** Ensure `FinalPriceVND` is a normalized numerical value (integer or float). This price must be the final, payable amount after any instant discounts are applied.
+
+    # 7.  **Deduplicate:** Remove duplicate entries to ensure there is only one result per unique product model from each distinct retailer.
+
+    # 8.  **CRITICAL - Prioritize and Sort:**
+    #     *   **A. Prioritize In-Stock:** First, filter your collected data to create a primary list containing ONLY products where the `StockStatus` is 'In Stock', 'Available', or similar positive confirmation.
+    #     *   **B. Sort by Price:** Sort this primary **in-stock** list by `FinalPriceVND` in ascending order.
+    #     *   **C. Fallback for Out-of-Stock:** If, and ONLY if, no in-stock products are found, create a secondary list of out-of-stock items and sort it by `FinalPriceVND` in ascending order.
+
+    # 9.  **Final Output Logic:**
+    #     *   **Return the cheapest available product:** From the sorted list (prioritizing the in-stock list), return ONLY the single product at the very top.
+    #     *   **Handle No Results:** If the search yields zero products from any retailer after extraction, return an empty `products` array.
+
+    # 10. **Format:** The final output MUST be a valid JSON object with a `products` array. This array will contain either the single cheapest product or be empty.```
+    # """
     task_instruction = f"""
-    You are a specialized scraper for Vietnamese retailers focusing ONLY on servers and laptops.
+    You are a specialized and highly efficient scraper for Vietnamese retailers, optimized to find the single cheapest available product based on its SKU.
 
-    TASK: Search for "{searchQuery}" across major Vietnamese laptop and server retailers.
+    **TASK:** Identify and return the CHEAPEST **in-stock** offerings for `{searchQuery}` using the `search_google_laptop_server` function  from a curated list of Vietnamese retailers, up to the specified `limit`.
+            Given a specific {searchQuery} (which is an SKU), identify and return only the single CHEAPEST in-stock offering from a curated list of Vietnamese retailers.
 
-    INSTRUCTIONS:
-    1. Use 'search_google_laptop_server' with query: "{searchQuery}"
-    2. Use 'extract_laptop_server_results' with limit={limit}
-    3. Focus ONLY on these retailers (skip others): 
-       FPT Shop, Thế Giới Di Động, CellphoneS, Hoàng Hà Mobile, Phong Vũ, GearVN, 
-       An Phát PC, Phúc Anh, Trần Anh, Nguyễn Kim, MediaMart, Điện Máy Xanh, Viettel Store, Vinaphone
-    4. Extract only Laptops and Servers.
-    5. Extract fields:
-       - ProductName
-       - Brand
-       - SKU
-       - FinalPriceVND
-       - Retailer
-       - Url
-       - StockStatus
-       - Category (Laptop/Server)
-       - ScrapedAt
-    6. Ensure all prices are in VND.
-    7. Deduplicate by brand, model, seller.
-    8. Return only valid JSON with `products` array.
+    **INSTRUCTIONS:**
+
+   1. CRITICAL - SKU Discovery and Categorization: Since the {searchQuery} is an SKU and its category is unknown, you must first perform a Discovery Search to determine the product type.
+    * A. Perform a Broad Search: Conduct a general Google search or using `search_google_laptop_server` function for the {searchQuery} SKU.
+    * B. Analyze Search Results: Look for keywords in the page titles and descriptions of the top results.
+    * If you see terms like "Laptop," "Máy tính xách tay," "MacBook," etc. -> Categorize as 'Laptop'.
+    * If you see terms like "Server," "Máy chủ," "Workstation," "Máy trạm," etc. -> Categorize as 'Server'.
+    * C. Select Retailer List based on Discovery:
+    * If categorized as 'Laptop', use this list: FPT Shop, Thế Giới Di Động, CellphoneS, Hoàng Hà Mobile, Phong Vũ, GearVN, An Phát PC, Phúc Anh, Nguyễn Kim, MediaMart, Điện Máy Xanh, Viettel Store.
+    * If categorized as 'Server', use this list: An Phát PC, Phúc Anh, Phong Vũ, Máy Chủ Việt, Thế Giới Máy Chủ, Việt Nam Server, KDATA.
+    * D. FALLBACK - If Ambiguous: If the Discovery Search is inconclusive or returns mixed results, combine both lists into one master list and search all of them. This ensures you do not miss the product.
+
+    2.  **Select Retailer List:** Based on the category determined in Step 1, use one of the following specialized lists:
+        *   **If 'Laptop':**
+            *   FPT Shop, Thế Giới Di Động, CellphoneS, Hoàng Hà Mobile, Phong Vũ, GearVN, An Phát PC, Phúc Anh, Nguyễn Kim, MediaMart, Điện Máy Xanh, Viettel Store.
+        *   **If 'Server':**
+            *   An Phát PC, Phúc Anh, Phong Vũ, Máy Chủ Việt, Thế Giới Máy Chủ, Việt Nam Server, KDATA.
+
+    3.  **Targeted Google Search:** Use the `search_google_laptop_server` function with queries designed to find the lowest prices. Use a variety of terms, such as:
+        *   "giá rẻ nhất {searchQuery}" (cheapest price)
+        *   "khuyến mãi {searchQuery}" (promotion)
+        *   "thanh lý {searchQuery}" (clearance)
+        *   "{searchQuery} giá tốt nhất" (best price)
+
+    4.  **Wider Data Extraction:** Use the `extract_laptop_server_results` function with an expanded number of results to create a large pool of products for analysis.
+
+    5.  **Extract Key Fields:**
+        *   ProductName
+        *   Brand
+        *   SKU
+        *   **FinalPriceVND** (Critical)
+        *   Retailer
+        *   Url
+        *   **StockStatus** (Critical)
+        *   Category ('Laptop' or 'Server')
+        *   ScrapedAt
+
+    6.  **Normalize Price Data:** Ensure `FinalPriceVND` is a normalized numerical value (integer or float). This price must be the final, payable amount after any instant discounts are applied.
+
+    7.  **Deduplicate:** Remove duplicate entries to ensure there is only one result per unique product model from each distinct retailer.
+
+    8.  **CRITICAL - Prioritize and Sort:**
+        *   **A. Prioritize In-Stock:** First, filter your collected data to create a primary list containing ONLY products where the `StockStatus` is 'In Stock', 'Available', or a similar positive confirmation.
+        *   **B. Sort by Price:** Sort this primary **in-stock** list by `FinalPriceVND` in ascending order.
+        *   **C. Fallback for Out-of-Stock:** If, and ONLY if, no in-stock products are found, create a secondary list of out-of-stock items and sort it by `FinalPriceVND` in ascending order.
+
+    9.  **Final Output Logic:**
+        *   **Return the cheapest available products:** From the sorted list (prioritizing the in-stock list), return the top products up to the specified `{limit}`.
+        *   **Handle No Results:** If the search yields zero products from any retailer after extraction, return an empty `products` array.
+
+    10. **Format:** The final output MUST be a valid JSON object with a `products` array. This array will contain the cheapest product(s) up to the `{limit}` or be empty.
     """
-
-    
     agent = Agent(
         browser=browser,
         llm=llm,
         task=task_instruction,
-        controller=controller
+        controller=controller,
+        use_vision= True
     )
 
-    agent_result = await agent.run()
-    await browser.stop()
+    # agent_result = await agent.run()
+    # result = agent_result.final_result()
+    # print("RAW AGENT RESULT:")
+    # print(f"Agent Result: {result}")
+    
+    #  # 2. Define and create the output directory
+    # output_dir = "output"
+    # os.makedirs(output_dir, exist_ok=True)
+    # print(f"Output directory '{output_dir}' is ready.")
+
+    # # 3. Save the full agent result to a JSON file
+    # # This gives you a complete, machine-readable record of the output.
+    # json_filepath = os.path.join(output_dir, "agent_output.json")
+    # try:
+    #     with open(json_filepath, 'w', encoding='utf-8') as json_file:
+    #         # The 'result' variable (a dictionary) is dumped into the JSON file
+    #         # ensure_ascii=False correctly handles Vietnamese characters.
+    #         # indent=4 makes the file easy to read for humans.
+    #         json.dump(result, json_file, ensure_ascii=False, indent=4)
+    #     print(f"✅ Successfully saved full result to JSON: {json_filepath}")
+    # except Exception as e:
+    #     print(f"❌ Error saving to JSON: {e}")
+
+    # # 4. Extract product data and save it to a CSV file
+    # # This gives you a spreadsheet-friendly format.
+    # csv_filepath = os.path.join(output_dir, "products_output.csv")
+    # try:
+    #     # Check if the 'products' key exists and contains a list of products
+    #     if 'products' in result and isinstance(result['products'], list) and result['products']:
+    #         products_data = result['products']
+            
+    #         # Use the keys from the first product dictionary as the CSV headers
+    #         headers = products_data[0].keys()
+
+    #         with open(csv_filepath, 'w', newline='', encoding='utf-8') as csv_file:
+    #             # DictWriter is perfect for writing a list of dictionaries to CSV
+    #             writer = csv.DictWriter(csv_file, fieldnames=headers)
+    #             writer.writeheader()  # Writes the column titles
+    #             writer.writerows(products_data) # Writes all the product data
+    #         print(f"✅ Successfully saved product data to CSV: {csv_filepath}")
+    #     else:
+    #         print("ℹ️ No product data found in the result to write to CSV.")
+    # except Exception as e:
+    #     print(f"❌ Error saving to CSV: {e}")
+
+    # except Exception as e:
+    #     print(f"An critical error occurred during the agent run: {e}")
+
+    # finally:
+    #     # 5. This 'finally' block ensures the browser is always closed,
+    #     #    preventing leftover processes, even if the script above fails.
+    #     print("-" * 30)
+    #     print("Stopping browser...")
+    #     await browser.stop()
+    #     print("Browser stopped. Process finished.")
+
+    try:
+        # 1. Run the agent to get the result
+        print("Running the agent...")
+        agent_result = await agent.run()
+        raw_result = agent_result.final_result() # Get the raw output
+
+        print("\nRAW AGENT RESULT:")
+        print(f"Agent Result: {raw_result}")
+        print("-" * 30)
+
+        # --- FIX STARTS HERE ---
+        # The agent's result might be a string. We must parse it into a Python object (dictionary).
+        data = {}
+        if isinstance(raw_result, str):
+            try:
+                print("Result is a string. Parsing from JSON...")
+                data = json.loads(raw_result)
+            except json.JSONDecodeError:
+                print(f"Critical Error: Agent result is not a valid JSON string. Cannot process.")
+                # Exit the 'try' block gracefully, browser will still stop in 'finally'
+                raise
+        else:
+            # If it's already a dictionary, we can use it directly
+            print("Result is already a dictionary/object.")
+            data = raw_result
+        # --- FIX ENDS HERE ---
+
+
+        # 2. Define and create the output directory
+        output_dir = "output"
+        os.makedirs(output_dir, exist_ok=True)
+        print(f"Output directory '{output_dir}' is ready.")
+
+
+        # 3. Save the parsed data to a JSON file
+        # (We use the 'data' variable from now on, not 'raw_result')
+        json_filepath = os.path.join(output_dir, "agent_output.json")
+        try:
+            with open(json_filepath, 'w', encoding='utf-8') as json_file:
+                json.dump(data, json_file, ensure_ascii=False, indent=4)
+            print(f"Successfully saved full result to JSON: {json_filepath}")
+        except Exception as e:
+            print(f"Error saving to JSON: {e}")
+        json_filepath_json = os.path.join(output_dir, "agent_output_json.json")
+        try:
+    # First, check if the 'products' key exists and contains a list
+            if 'products' in data and isinstance(data['products'], list):
+                
+                # Extract the list of products from the main data object
+                products_to_save = data['products']
+                
+                # Now, save ONLY the extracted list to the file
+                with open(json_filepath_json, 'w', encoding='utf-8') as json_file:
+                    json.dump(products_to_save, json_file, ensure_ascii=False, indent=4)
+                    
+                print(f"Successfully saved EXTRACTED product list to JSON: {json_filepath_json}")
+                
+            else:
+                # This handles cases where the agent result had no 'products' key
+                print("ℹNo 'products' key found in the result. JSON file will not be created.")
+
+        except Exception as e:
+            print(f"Error saving extracted data to JSON: {e}")
+              
+
+
+        # 4. Extract product data and save it to a CSV file
+        csv_filepath = os.path.join(output_dir, "products_output.csv")
+        try:
+            # Check for the 'products' key in our newly parsed 'data' dictionary
+            if 'products' in data and isinstance(data['products'], list) and data['products']:
+                products_data = data['products']
+                
+                # The header keys are taken from the first product dictionary in the list
+                headers = products_data[0].keys()
+
+                with open(csv_filepath, 'w', newline='', encoding='utf-8') as csv_file:
+                    writer = csv.DictWriter(csv_file, fieldnames=headers)
+                    writer.writeheader()
+                    writer.writerows(products_data)
+                print(f"✅ Successfully saved product data to CSV: {csv_filepath}")
+            else:
+                print("ℹNo product data found in the parsed result to write to CSV.")
+        except Exception as e:
+            print(f"Error saving to CSV: {e}")
+
+    except Exception as e:
+        # This will now also catch the json.JSONDecodeError if parsing fails
+        print(f"\nAn error occurred during the process: {e}")
+
+    finally:
+        # 5. This block ensures the browser is always closed safely
+        print("-" * 30)
+        print("Stopping browser...")
+        await browser.stop()
+        print("Browser stopped. Process finished.")
+
+    
+
 
     # # Extract JSON string from agent_result
     # if hasattr(agent_result, "final_result"):
@@ -285,73 +543,13 @@ async def scrape_product_data(searchQuery: str, limit: int) -> list[ProductCreat
     #     print(f"Error parsing products: {e}")
     #     product_objs = []
     # Extract JSON string from agent_result
-    if hasattr(agent_result, "final_result"):
-        # if final_result is a method, call it
-        result_json = agent_result.final_result() if callable(agent_result.final_result) else agent_result.final_result
-    elif hasattr(agent_result, "all_results") and agent_result.all_results:
-        last = agent_result.all_results[-1]
-        result_json = last.get("result", "{}")
-    else:
-        result_json = "{}"
-
-    # Parse JSON and convert to ProductCreate list
-    try:
-        if isinstance(result_json, (dict, list)):
-            # Already a dict/list, no need to json.loads
-            data = result_json
-        else:
-            data = json.loads(result_json)
-        products = data.get("products", [])
-        product_objs = [ProductCreate(**p) for p in products]
-    except Exception as e:
-        print(f"Error parsing products: {e}")
-        print("⚠️ result_json:", result_json)  # debug print
-        product_objs = []
-
-
-    return product_objs
-async def save_products_to_db(products: list[ProductCreate], db: Session):
-    """Save scraped products to the database."""
-    saved_products = []
-    for product in products:
-        db_product = Product(
-            product_name=product.product_name,
-            external_sku=product.external_sku,
-            brand=product.brand,
-            retailer=product.retailer,
-            url=product.url,
-            original_price=product.original_price,
-            price=product.price,
-            stock_status=product.stock_status,
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
-        )
-        db.add(db_product)
-        db.commit()
-        db.refresh(db_product)
-        saved_products.append(db_product)
-    return saved_products
-
-async def scrape_and_save_products(searchQuery: str, limit: int = 10):
-    """Main function to scrape and save products."""
-    db: Session = get_db()
-    try:
-        products = await scrape_product_data(searchQuery, limit)
-        if not products:
-            print("No products found.")
-            return []
-        saved_products = await save_products_to_db(products, db)
-        print(f"Saved {len(saved_products)} products to the database.")
-        return saved_products
-    except Exception as e:
-        print(f"Error during scraping or saving: {e}")
-        return []
+    
 if __name__ == "__main__":
     import asyncio
-    search_query = "máy chủ server Dell PowerEdge T140 giá rẻ"
-    limit = 10
+    search_query = "30GS00G7VA"
+    limit = 2
     loop = asyncio.get_event_loop()
-    products = loop.run_until_complete(scrape_and_save_products(search_query, limit))
+    products = loop.run_until_complete(scrape_product_data(search_query, limit))
 
 
 
