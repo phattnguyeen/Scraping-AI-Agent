@@ -469,6 +469,8 @@ async def scrape_product_data(searchQuery: str, limit: int) -> list[ProductCreat
         print("Browser stopped. Process finished.")
     
     
+    
+    
 
 
 
