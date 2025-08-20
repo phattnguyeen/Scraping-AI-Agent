@@ -1,32 +1,25 @@
-from pydantic import BaseModel, Field
-from datetime import datetime
-from typing import Optional, Dict, Any, List
+from sqlalchemy import (
+    Column, Integer, String, Numeric, DateTime, ForeignKey, func, Text
+)
+from sqlalchemy.orm import relationship
+from sqlalchemy.orm import declarative_base
 
-class Products(BaseModel):
-    product_id: str = Field(..., description="Unique identifier for the product")
-    product_name: str = Field(..., description="Name of the product")
-    category: str = Field(..., description="Category of the product")
-    brand: str = Field(..., description="Brand of the product")
-    model: Optional[str] = Field(None, description="Model of the product, if applicable")
-    seller_name: str = Field(..., description="Name of the seller")
-    price: float = Field(..., description="Price of the product")
-    currency: str = Field(..., description="Currency of the price")
-    availability: bool = Field(..., description="Availability status of the product")
-    url: str = Field(..., description="URL to the product page")
-    scraped_at: str = Field(default_factory=lambda: datetime.now().isoformat(), description="Timestamp when the data was scraped")
+Base = declarative_base()
 
-class ProductsList(BaseModel):
-    products: List[Products] = Field(..., description="List of products")
-    limit: int = Field(..., description="Limit on the number of products to return")
-    total: int = Field(..., description="Total number of products found")
-    next_page: Optional[str] = Field(None, description="URL for the next page of results, if available")
-    previous_page: Optional[str] = Field(None, description="URL for the previous page of results, if available")
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Optional metadata about the product list")
+class Product(Base):
+    __tablename__ = "Product"
 
-class Prompt(BaseModel):
-    prompt: str = Field(..., description="The prompt to be used for scraping or processing")
-    context: Optional[str] = Field(None, description="Optional context to provide additional information for the prompt")
-    
+    Id = Column(Integer, primary_key=True, autoincrement=True)
+    ExternalSku = Column(String(100), nullable=True)     # SKU ngoài web crawl
+    ProductId = Column(Integer, nullable=True)           # Map tới Product trong nopCommerce
+    ProductName = Column(String(500), nullable=False)
+    Retailer = Column(String(200), nullable=True)
+    Price = Column(Numeric(18, 2), nullable=False)
+    OriginalPrice = Column(Numeric(18, 2), nullable=True)
+    Url = Column(Text, nullable=False)
+    StockStatus = Column(String(100), nullable=True)
+    CreatedAt = Column(DateTime, server_default=func.now())
+    UpdatedAt = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
-
-
+    def __repr__(self):
+        return f"<Product(Id={self.Id}, Name='{self.ProductName}', Price={self.Price})>"
