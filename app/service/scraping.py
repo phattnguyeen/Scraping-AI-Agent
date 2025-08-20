@@ -17,9 +17,12 @@ from typing import Any
 from bs4 import BeautifulSoup
 import re
 import csv
+from app.crud.products import get_all_skus
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+
 
 LAPTOP_SERVER_RETAILERS = {
     "fptshop.com.vn": "FPT Shop",
@@ -207,8 +210,7 @@ async def extract_laptop_server_results(page, limit: int = 10):
 
         return ActionResult(extracted_json={"products": results[:limit]})
 
-
-async def scrape_product_data(searchQuery: str, limit: int) -> list[ProductCreate]:
+async def scrape_product_data(searchQuery: list, limit: int) -> list[ProductCreate]:
     browser_config = BrowserConfig(
         headless=True,
         slow_mo=1000,
@@ -228,81 +230,11 @@ async def scrape_product_data(searchQuery: str, limit: int) -> list[ProductCreat
         api_key=OPENAI_API_KEY
     )
 
-    # task_instruction = f"""
-    # You are a specialized scraper for Vietnamese retailers focusing ONLY on servers and laptops.
 
-    # TASK: Search for "{searchQuery}" across major Vietnamese laptop and server retailers.
+        # Define the task instruction for the agent
+   
+    
 
-    # INSTRUCTIONS:
-    # 1. Use 'search_google_laptop_server' with query: "{searchQuery}"
-    # 2. Use 'extract_laptop_server_results' with limit={limit}
-    # 3. Focus ONLY on these retailers (skip others): 
-    #    FPT Shop, Thế Giới Di Động, CellphoneS, Hoàng Hà Mobile, Phong Vũ, GearVN, 
-    #    An Phát PC, Phúc Anh, Trần Anh, Nguyễn Kim, MediaMart, Điện Máy Xanh, Viettel Store, Vinaphone
-    # 4. Extract only Laptops and Servers.
-    # 5. Extract fields:
-    #    - ProductName
-    #    - Brand
-    #    - SKU
-    #    - FinalPriceVND
-    #    - Retailer
-    #    - Url
-    #    - StockStatus
-    #    - Category (Laptop/Server)
-    #    - ScrapedAt
-    # 6. Ensure all prices are in VND.
-    # 7. Deduplicate by brand, model, seller.
-    # 8. Return only valid JSON with `products` array.
-    # """
-    # task_instruction = f"""
-    # You are a specialized and highly efficient scraper for Vietnamese retailers, optimized to find the single cheapest available Laptop or Server.
-
-    # TASK: Identify and return only the single CHEAPEST **in-stock** offering for "{searchQuery}" from a curated list of Vietnamese retailers.
-
-    # INSTRUCTIONS:
-
-    # 1.  **Analyze and Categorize:** First, determine if the `"{searchQuery}"` refers to a 'Laptop' or a 'Server'. This is crucial for selecting the correct list of retailers to search.
-
-    # 2.  **Select Retailer List:** Based on the category determined in Step 1, use one of the following specialized lists:
-    #     *   **If 'Laptop':**
-    #         *   FPT Shop, Thế Giới Di Động, CellphoneS, Hoàng Hà Mobile, Phong Vũ, GearVN, An Phát PC, Phúc Anh, Nguyễn Kim, MediaMart, Điện Máy Xanh, Viettel Store.
-    #     *   **If 'Server':**
-    #         *   An Phát PC, Phúc Anh, Phong Vũ, Máy Chủ Việt, Thế Giới Máy Chủ, Việt Nam Server, KDATA.
-
-    # 3.  **Targeted Google Search:** Use the `search_google_laptop_server` function with queries designed to find the lowest price. Use a variety of terms, such as:
-    #     *   "giá rẻ nhất {searchQuery}" (cheapest price)
-    #     *   "khuyến mãi {searchQuery}" (promotion)
-    #     *   "thanh lý {searchQuery}" (clearance)
-    #     *   "{searchQuery} giá tốt nhất" (best price)
-
-    # 4.  **Wider Data Extraction:** Use the `extract_laptop_server_results` function with an expanded `limit={limit}` to create a large pool of products for analysis.
-
-    # 5.  **Extract Key Fields:**
-    #     *   ProductName
-    #     *   Brand
-    #     *   SKU
-    #     *   **FinalPriceVND** (Critical)
-    #     *   Retailer
-    #     *   Url
-    #     *   **StockStatus** (Critical)
-    #     *   Category ('Laptop' or 'Server')
-    #     *   ScrapedAt
-
-    # 6.  **Normalize Price Data:** Ensure `FinalPriceVND` is a normalized numerical value (integer or float). This price must be the final, payable amount after any instant discounts are applied.
-
-    # 7.  **Deduplicate:** Remove duplicate entries to ensure there is only one result per unique product model from each distinct retailer.
-
-    # 8.  **CRITICAL - Prioritize and Sort:**
-    #     *   **A. Prioritize In-Stock:** First, filter your collected data to create a primary list containing ONLY products where the `StockStatus` is 'In Stock', 'Available', or similar positive confirmation.
-    #     *   **B. Sort by Price:** Sort this primary **in-stock** list by `FinalPriceVND` in ascending order.
-    #     *   **C. Fallback for Out-of-Stock:** If, and ONLY if, no in-stock products are found, create a secondary list of out-of-stock items and sort it by `FinalPriceVND` in ascending order.
-
-    # 9.  **Final Output Logic:**
-    #     *   **Return the cheapest available product:** From the sorted list (prioritizing the in-stock list), return ONLY the single product at the very top.
-    #     *   **Handle No Results:** If the search yields zero products from any retailer after extraction, return an empty `products` array.
-
-    # 10. **Format:** The final output MUST be a valid JSON object with a `products` array. This array will contain either the single cheapest product or be empty.```
-    # """
     task_instruction = f"""
     You are a specialized and highly efficient scraper for Vietnamese retailers, optimized to find the single cheapest available product based on its SKU.
 
@@ -451,7 +383,7 @@ async def scrape_product_data(searchQuery: str, limit: int) -> list[ProductCreat
                     writer = csv.DictWriter(csv_file, fieldnames=headers)
                     writer.writeheader()
                     writer.writerows(products_data)
-                print(f"✅ Successfully saved product data to CSV: {csv_filepath}")
+                print(f"Successfully saved product data to CSV: {csv_filepath}")
             else:
                 print("ℹNo product data found in the parsed result to write to CSV.")
         except Exception as e:
@@ -467,6 +399,48 @@ async def scrape_product_data(searchQuery: str, limit: int) -> list[ProductCreat
         print("Stopping browser...")
         await browser.stop()
         print("Browser stopped. Process finished.")
+
+async def run_price_update_job():
+    """
+    The main job that orchestrates fetching SKUs, scraping prices,
+    and updating the database.
+    """
+    print("\n--- Starting Price Update Job ---")
+    db: Session = next(get_db()) # Get a database session
+
+    try:
+        # 1. Get all SKUs from your database
+        skus_to_update = get_all_skus(db)
+        if not skus_to_update:
+            print("No SKUs to process. Exiting job.")
+            return
+
+        # 2. Loop through each SKU and scrape its data
+        for sku in skus_to_update:
+            print(f"\n--- Processing SKU: {sku} ---")
+            
+            # The scrape function returns a list of products, we only need the cheapest (the first one)
+            scraped_products = await scrape_product_data(searchQuery=sku, limit=2)
+            return scraped_products
+        
+            
+            # # 3. Check the result and update the database
+            # if scraped_products:
+            #     # Assuming the first result is the cheapest as per the prompt's sorting logic
+            #     cheapest_product = scraped_products[0]
+            #     new_price = cheapest_product.FinalPriceVND
+                
+            #     # Call the function to update the price in the DB
+            #     update_price_for_sku(db, sku=sku, new_price=new_price)
+            # else:
+            #     print(f"Scraping returned no results for SKU: {sku}. Skipping update.")
+                
+    finally:
+        # Ensure the database session is closed
+        db.close()
+        print("\n--- Price Update Job Scraped ---")
+
+        
     
     
     
@@ -498,10 +472,10 @@ async def scrape_product_data(searchQuery: str, limit: int) -> list[ProductCreat
     
 if __name__ == "__main__":
     import asyncio
-    search_query = "30GS00G7VA"
-    limit = 2
+    # search_query = "30GS00G7VA"
+    # limit = 2
     loop = asyncio.get_event_loop()
-    products = loop.run_until_complete(scrape_product_data(search_query, limit))
+    products = loop.run_until_complete(run_price_update_job())
 
 
 

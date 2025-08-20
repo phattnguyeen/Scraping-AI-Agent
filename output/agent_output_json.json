@@ -1,13 +1,24 @@
 [
     {
-        "ProductName": "Máy trạm Workstation Lenovo ThinkStation P3 Tower 30GS00G7VA (I7 14700/ 16GB/ 512GB SSD/ Nvidia T400 4GB/ Key+Mouse/ NoOS/ 3Y)",
-        "Brand": "Lenovo",
-        "SKU": "30GS00G7VA",
-        "FinalPriceVND": 33490000,
-        "Retailer": "Phúc Anh",
-        "Url": "https://www.phucanh.vn/may-tram-workstation-lenovo-thinkstation-p3-tower-30gs00g7va.html",
-        "StockStatus": "In Stock",
-        "Category": "Server",
-        "ScrapedAt": "2025-08-20T16:09:00Z"
+        "ProductName": "iPhone 16 Pro Max 256GB",
+        "Brand": "Apple",
+        "SKU": "iPhone 16 Pro Max 256GB",
+        "FinalPriceVND": 29990000,
+        "Retailer": "FPT Shop",
+        "Url": "https://fptshop.com.vn/dien-thoai/iphone-16-pro-max",
+        "StockStatus": "In Stock (Mua ngay)",
+        "Category": "Laptop",
+        "ScrapedAt": "2025-08-20T18:14:00"
+    },
+    {
+        "ProductName": "iPhone 16 Pro Max 256GB",
+        "Brand": "Apple",
+        "SKU": "iPhone 16 Pro Max 256GB",
+        "FinalPriceVND": 30090000,
+        "Retailer": "Thế Giới Di Động",
+        "Url": "https://www.thegioididong.com/dtdd/iphone-16-pro-max",
+        "StockStatus": "In Stock (Mua ngay)",
+        "Category": "Laptop",
+        "ScrapedAt": "2025-08-20T18:14:00"
     }
 ]
