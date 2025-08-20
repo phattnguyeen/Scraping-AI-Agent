@@ -1,0 +1,49 @@
+import time
+
+# ...existing code...
+
+# 2. Define and create the output directory
+output_dir = "output"
+os.makedirs(output_dir, exist_ok=True)
+print(f"Output directory '{output_dir}' is ready.")
+
+# Generate a timestamp for unique filenames
+timestamp = time.strftime("%Y%m%d_%H%M%S")
+
+# 3. Save the parsed data to a JSON file (full result)
+json_filepath = os.path.join(output_dir, f"agent_output_{timestamp}.json")
+try:
+    with open(json_filepath, 'w', encoding='utf-8') as json_file:
+        json.dump(data, json_file, ensure_ascii=False, indent=4)
+    print(f"Successfully saved full result to JSON: {json_filepath}")
+except Exception as e:
+    print(f"Error saving to JSON: {e}")
+
+# Save only the extracted products list to JSON
+json_products_filepath = os.path.join(output_dir, f"agent_products_{timestamp}.json")
+try:
+    if 'products' in data and isinstance(data['products'], list):
+        products_to_save = data['products']
+        with open(json_products_filepath, 'w', encoding='utf-8') as json_file:
+            json.dump(products_to_save, json_file, ensure_ascii=False, indent=4)
+        print(f"Successfully saved EXTRACTED product list to JSON: {json_products_filepath}")
+    else:
+        print("ℹNo 'products' key found in the result. JSON file will not be created.")
+except Exception as e:
+    print(f"Error saving extracted data to JSON: {e}")
+
+# 4. Extract product data and save it to a CSV file
+csv_filepath = os.path.join(output_dir, f"products_output_{timestamp}.csv")
+try:
+    if 'products' in data and isinstance(data['products'], list) and data['products']:
+        products_data = data['products']
+        headers = products_data[0].keys()
+        with open(csv_filepath, 'w', newline='', encoding='utf-8') as csv_file:
+            writer = csv.DictWriter(csv_file, fieldnames=headers)
+            writer.writeheader()
+            writer.writerows(products_data)
+        print(f"Successfully saved product data to CSV: {csv_filepath}")
+    else:
+        print("ℹNo product data found in the parsed result to write to CSV.")
+except Exception as e:
+    print(f"Error saving to CSV: {e}")

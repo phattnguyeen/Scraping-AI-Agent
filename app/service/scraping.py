@@ -332,62 +332,111 @@ async def scrape_product_data(searchQuery: list, limit: int) -> list[ProductCrea
 
 
         # 2. Define and create the output directory
-        output_dir = "output"
-        os.makedirs(output_dir, exist_ok=True)
-        print(f"Output directory '{output_dir}' is ready.")
+        # output_dir = "output"
+        # os.makedirs(output_dir, exist_ok=True)
+        # print(f"Output directory '{output_dir}' is ready.")
 
 
-        # 3. Save the parsed data to a JSON file
-        # (We use the 'data' variable from now on, not 'raw_result')
-        json_filepath = os.path.join(output_dir, "agent_output.json")
-        try:
-            with open(json_filepath, 'w', encoding='utf-8') as json_file:
-                json.dump(data, json_file, ensure_ascii=False, indent=4)
-            print(f"Successfully saved full result to JSON: {json_filepath}")
-        except Exception as e:
-            print(f"Error saving to JSON: {e}")
-        json_filepath_json = os.path.join(output_dir, "agent_output_json.json")
-        try:
-    # First, check if the 'products' key exists and contains a list
-            if 'products' in data and isinstance(data['products'], list):
+    #     # 3. Save the parsed data to a JSON file
+    #     # (We use the 'data' variable from now on, not 'raw_result')
+    #     json_filepath = os.path.join(output_dir, "agent_output.json")
+    #     try:
+    #         with open(json_filepath, 'w', encoding='utf-8') as json_file:
+    #             json.dump(data, json_file, ensure_ascii=False, indent=4)
+    #         print(f"Successfully saved full result to JSON: {json_filepath}")
+    #     except Exception as e:
+    #         print(f"Error saving to JSON: {e}")
+    #     json_filepath_json = os.path.join(output_dir, "agent_output_json.json")
+    #     try:
+    # # First, check if the 'products' key exists and contains a list
+    #         if 'products' in data and isinstance(data['products'], list):
                 
-                # Extract the list of products from the main data object
-                products_to_save = data['products']
+    #             # Extract the list of products from the main data object
+    #             products_to_save = data['products']
                 
-                # Now, save ONLY the extracted list to the file
-                with open(json_filepath_json, 'w', encoding='utf-8') as json_file:
-                    json.dump(products_to_save, json_file, ensure_ascii=False, indent=4)
+    #             # Now, save ONLY the extracted list to the file
+    #             with open(json_filepath_json, 'w', encoding='utf-8') as json_file:
+    #                 json.dump(products_to_save, json_file, ensure_ascii=False, indent=4)
                     
-                print(f"Successfully saved EXTRACTED product list to JSON: {json_filepath_json}")
+    #             print(f"Successfully saved EXTRACTED product list to JSON: {json_filepath_json}")
                 
-            else:
-                # This handles cases where the agent result had no 'products' key
-                print("ℹNo 'products' key found in the result. JSON file will not be created.")
+    #         else:
+    #             # This handles cases where the agent result had no 'products' key
+    #             print("ℹNo 'products' key found in the result. JSON file will not be created.")
 
-        except Exception as e:
-            print(f"Error saving extracted data to JSON: {e}")
+    #     except Exception as e:
+    #         print(f"Error saving extracted data to JSON: {e}")
               
 
 
-        # 4. Extract product data and save it to a CSV file
-        csv_filepath = os.path.join(output_dir, "products_output.csv")
-        try:
-            # Check for the 'products' key in our newly parsed 'data' dictionary
-            if 'products' in data and isinstance(data['products'], list) and data['products']:
-                products_data = data['products']
+    #     # 4. Extract product data and save it to a CSV file
+    #     csv_filepath = os.path.join(output_dir, "products_output.csv")
+    #     try:
+    #         # Check for the 'products' key in our newly parsed 'data' dictionary
+    #         if 'products' in data and isinstance(data['products'], list) and data['products']:
+    #             products_data = data['products']
                 
-                # The header keys are taken from the first product dictionary in the list
-                headers = products_data[0].keys()
+    #             # The header keys are taken from the first product dictionary in the list
+    #             headers = products_data[0].keys()
 
-                with open(csv_filepath, 'w', newline='', encoding='utf-8') as csv_file:
-                    writer = csv.DictWriter(csv_file, fieldnames=headers)
-                    writer.writeheader()
-                    writer.writerows(products_data)
-                print(f"Successfully saved product data to CSV: {csv_filepath}")
-            else:
-                print("ℹNo product data found in the parsed result to write to CSV.")
-        except Exception as e:
-            print(f"Error saving to CSV: {e}")
+    #             with open(csv_filepath, 'w', newline='', encoding='utf-8') as csv_file:
+    #                 writer = csv.DictWriter(csv_file, fieldnames=headers)
+    #                 writer.writeheader()
+    #                 writer.writerows(products_data)
+    #             print(f"Successfully saved product data to CSV: {csv_filepath}")
+    #         else:
+    #             print("ℹNo product data found in the parsed result to write to CSV.")
+    #     except Exception as e:
+    #         print(f"Error saving to CSV: {e}")
+    import time
+
+    # ...existing code...
+
+    # 2. Define and create the output directory
+    output_dir = "output"
+    os.makedirs(output_dir, exist_ok=True)
+    print(f"Output directory '{output_dir}' is ready.")
+
+    # Generate a timestamp for unique filenames
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
+
+    # 3. Save the parsed data to a JSON file (full result)
+    json_filepath = os.path.join(output_dir, f"agent_output_{timestamp}.json")
+    try:
+        with open(json_filepath, 'w', encoding='utf-8') as json_file:
+            json.dump(data, json_file, ensure_ascii=False, indent=4)
+        print(f"Successfully saved full result to JSON: {json_filepath}")
+    except Exception as e:
+        print(f"Error saving to JSON: {e}")
+
+    # Save only the extracted products list to JSON
+    json_products_filepath = os.path.join(output_dir, f"agent_products_{timestamp}.json")
+    try:
+        if 'products' in data and isinstance(data['products'], list):
+            products_to_save = data['products']
+            with open(json_products_filepath, 'w', encoding='utf-8') as json_file:
+                json.dump(products_to_save, json_file, ensure_ascii=False, indent=4)
+            print(f"Successfully saved EXTRACTED product list to JSON: {json_products_filepath}")
+        else:
+            print("ℹNo 'products' key found in the result. JSON file will not be created.")
+    except Exception as e:
+        print(f"Error saving extracted data to JSON: {e}")
+
+    # 4. Extract product data and save it to a CSV file
+    csv_filepath = os.path.join(output_dir, f"products_output_{timestamp}.csv")
+    try:
+        if 'products' in data and isinstance(data['products'], list) and data['products']:
+            products_data = data['products']
+            headers = products_data[0].keys()
+            with open(csv_filepath, 'w', newline='', encoding='utf-8') as csv_file:
+                writer = csv.DictWriter(csv_file, fieldnames=headers)
+                writer.writeheader()
+                writer.writerows(products_data)
+            print(f"Successfully saved product data to CSV: {csv_filepath}")
+        else:
+            print("ℹNo product data found in the parsed result to write to CSV.")
+    except Exception as e:
+        print(f"Error saving to CSV: {e}")
 
     except Exception as e:
         # This will now also catch the json.JSONDecodeError if parsing fails
@@ -420,7 +469,7 @@ async def run_price_update_job():
             print(f"\n--- Processing SKU: {sku} ---")
             
             # The scrape function returns a list of products, we only need the cheapest (the first one)
-            scraped_products = await scrape_product_data(searchQuery=sku, limit=2)
+            scraped_products = await scrape_product_data(searchQuery=sku, limit=4)
             return scraped_products
         
             
