@@ -25,3 +25,6 @@ class ProductOut(ProductBase):
 
     class Config:
         from_attributes = True   # Enable ORM mode for SQLAlchemy
+
+class ProductList(BaseModel):
+    products: list[ProductCreate]
