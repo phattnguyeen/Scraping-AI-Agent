@@ -19,6 +19,7 @@ import re
 import csv
 from app.crud.products import get_all_skus
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+import time
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
@@ -104,16 +105,58 @@ def clean_price(price_text: str) -> float:
         return 0.0
 controller = Controller()
 # --- Custom Action ---
+# @controller.action("search_google_laptop_server")
+# async def search_google_laptop_server(page, query: str):
+#         """Search Google specifically for laptop and server products."""
+#         search_query = f"{query} laptop server máy tính xách tay máy chủ giá rẻ"
+#         await page.goto("https://www.google.com/?hl=vi", timeout=30000)
+#         await page.wait_for_selector("textarea[name='q'], input[name='q']", timeout=10000)
+#         await page.fill("textarea[name='q'], input[name='q']", search_query)
+#         await page.keyboard.press("Enter")
+#         await page.wait_for_selector("div[data-sokoban-container], div.sh-dgr__content", timeout=15000)
+#         return {"status": "success", "query": search_query}
+
+import logging
+
+logger = logging.getLogger(__name__)
+
 @controller.action("search_google_laptop_server")
 async def search_google_laptop_server(page, query: str):
-        """Search Google specifically for laptop and server products."""
-        search_query = f"{query} laptop server máy tính xách tay máy chủ giá rẻ"
+    """
+    Sarches Google specifically for laptop and server products using robust selectors and error handling.
+    """
+    search_query = f"{query} giá rẻ nhất"
+    
+    try:
+        logger.info(f"Navigating to Google for search query: '{search_query}'")
         await page.goto("https://www.google.com/?hl=vi", timeout=30000)
-        await page.wait_for_selector("textarea[name='q'], input[name='q']", timeout=10000)
-        await page.fill("textarea[name='q'], input[name='q']", search_query)
+
+        # Wait for the search input field to be available
+        search_input_selector = "textarea[name='q'], input[name='q']"
+        await page.wait_for_selector(search_input_selector, timeout=10000)
+        
+        # Fill the search field and submit
+        await page.fill(search_input_selector, search_query)
         await page.keyboard.press("Enter")
+        
+        # Wait for the main search results container, which is more stable
+        # The '#search' ID is a more generic and reliable selector for Google results
         await page.wait_for_selector("div[data-sokoban-container], div.sh-dgr__content", timeout=15000)
-        return {"status": "success", "query": search_query}
+        
+        logger.info("Successfully loaded Google search results page.")
+        return {
+            "status": "success",
+            "query": search_query,
+            "message": "Search results loaded successfully."
+        }
+    except Exception as e:
+        error_message = f"An unexpected error occurred during the Google search: {e}"
+        logger.error(error_message)
+        return {
+            "status": "failure",
+            "query": search_query,
+            "error": error_message
+        }
 
 @controller.action("extract_final_price")
 async def extract_final_price(page, url: str, retailer: str):
@@ -231,20 +274,16 @@ async def scrape_product_data(searchQuery: list, limit: int) -> list[ProductCrea
     )
 
 
-        # Define the task instruction for the agent
-   
-    
-
     task_instruction = f"""
     You are a specialized and highly efficient scraper for Vietnamese retailers, optimized to find the single cheapest available product based on its SKU.
 
-    **TASK:** Identify and return the CHEAPEST **in-stock** offerings for `{searchQuery}` using the `search_google_laptop_server` function  from a curated list of Vietnamese retailers, up to the specified `limit`.
+    **TASK:** Identify and return the CHEAPEST **in-stock** offerings for `{searchQuery}` using the search on Google Chorme  from a curated list of Vietnamese retailers, up to the specified `limit`.
             Given a specific {searchQuery} (which is an SKU), identify and return only the single CHEAPEST in-stock offering from a curated list of Vietnamese retailers.
 
     **INSTRUCTIONS:**
 
    1. CRITICAL - SKU Discovery and Categorization: Since the {searchQuery} is an SKU and its category is unknown, you must first perform a Discovery Search to determine the product type.
-    * A. Perform a Broad Search: Conduct a general Google search or using `search_google_laptop_server` function for the {searchQuery} SKU.
+    * A. Perform a Broad Search: Conduct a general Google search or using google.com  for the {searchQuery} SKU.
     * B. Analyze Search Results: Look for keywords in the page titles and descriptions of the top results.
     * If you see terms like "Laptop," "Máy tính xách tay," "MacBook," etc. -> Categorize as 'Laptop'.
     * If you see terms like "Server," "Máy chủ," "Workstation," "Máy trạm," etc. -> Categorize as 'Server'.
@@ -259,7 +298,7 @@ async def scrape_product_data(searchQuery: list, limit: int) -> list[ProductCrea
         *   **If 'Server':**
             *   An Phát PC, Phúc Anh, Phong Vũ, Máy Chủ Việt, Thế Giới Máy Chủ, Việt Nam Server, KDATA.
 
-    3.  **Targeted Google Search:** Use the `search_google_laptop_server` function with queries designed to find the lowest prices. Use a variety of terms, such as:
+    3.  **Targeted Google Search:** Use the google.com with queries designed to find the lowest prices. Use a variety of terms, such as:
         *   "giá rẻ nhất {searchQuery}" (cheapest price)
         *   "khuyến mãi {searchQuery}" (promotion)
         *   "thanh lý {searchQuery}" (clearance)
@@ -302,7 +341,6 @@ async def scrape_product_data(searchQuery: list, limit: int) -> list[ProductCrea
         use_vision= True
     )
 
-
     try:
         # 1. Run the agent to get the result
         print("Running the agent...")
@@ -332,114 +370,53 @@ async def scrape_product_data(searchQuery: list, limit: int) -> list[ProductCrea
 
 
         # 2. Define and create the output directory
-        # output_dir = "output"
-        # os.makedirs(output_dir, exist_ok=True)
-        # print(f"Output directory '{output_dir}' is ready.")
+        output_dir = "output"
+        os.makedirs(output_dir, exist_ok=True)
+        print(f"Output directory '{output_dir}' is ready.")
 
+        # Generate a timestamp for unique filenames
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
 
-    #     # 3. Save the parsed data to a JSON file
-    #     # (We use the 'data' variable from now on, not 'raw_result')
-    #     json_filepath = os.path.join(output_dir, "agent_output.json")
-    #     try:
-    #         with open(json_filepath, 'w', encoding='utf-8') as json_file:
-    #             json.dump(data, json_file, ensure_ascii=False, indent=4)
-    #         print(f"Successfully saved full result to JSON: {json_filepath}")
-    #     except Exception as e:
-    #         print(f"Error saving to JSON: {e}")
-    #     json_filepath_json = os.path.join(output_dir, "agent_output_json.json")
-    #     try:
-    # # First, check if the 'products' key exists and contains a list
-    #         if 'products' in data and isinstance(data['products'], list):
-                
-    #             # Extract the list of products from the main data object
-    #             products_to_save = data['products']
-                
-    #             # Now, save ONLY the extracted list to the file
-    #             with open(json_filepath_json, 'w', encoding='utf-8') as json_file:
-    #                 json.dump(products_to_save, json_file, ensure_ascii=False, indent=4)
-                    
-    #             print(f"Successfully saved EXTRACTED product list to JSON: {json_filepath_json}")
-                
-    #         else:
-    #             # This handles cases where the agent result had no 'products' key
-    #             print("ℹNo 'products' key found in the result. JSON file will not be created.")
+        # 3. Save the parsed data to a JSON file (full result)
+        json_filepath = os.path.join(output_dir, f"agent_output_{timestamp}.json")
+        try:
+            with open(json_filepath, 'w', encoding='utf-8') as json_file:
+                json.dump(data, json_file, ensure_ascii=False, indent=4)
+            print(f"Successfully saved full result to JSON: {json_filepath}")
+        except Exception as e:
+            print(f"Error saving to JSON: {e}")
 
-    #     except Exception as e:
-    #         print(f"Error saving extracted data to JSON: {e}")
-              
+        # Save only the extracted products list to JSON
+        json_products_filepath = os.path.join(output_dir, f"agent_products_{timestamp}.json")
+        try:
+            if 'products' in data and isinstance(data['products'], list):
+                products_to_save = data['products']
+                with open(json_products_filepath, 'w', encoding='utf-8') as json_file:
+                    json.dump(products_to_save, json_file, ensure_ascii=False, indent=4)
+                print(f"Successfully saved EXTRACTED product list to JSON: {json_products_filepath}")
+            else:
+                print("ℹNo 'products' key found in the result. JSON file will not be created.")
+        except Exception as e:
+            print(f"Error saving extracted data to JSON: {e}")
 
-
-    #     # 4. Extract product data and save it to a CSV file
-    #     csv_filepath = os.path.join(output_dir, "products_output.csv")
-    #     try:
-    #         # Check for the 'products' key in our newly parsed 'data' dictionary
-    #         if 'products' in data and isinstance(data['products'], list) and data['products']:
-    #             products_data = data['products']
-                
-    #             # The header keys are taken from the first product dictionary in the list
-    #             headers = products_data[0].keys()
-
-    #             with open(csv_filepath, 'w', newline='', encoding='utf-8') as csv_file:
-    #                 writer = csv.DictWriter(csv_file, fieldnames=headers)
-    #                 writer.writeheader()
-    #                 writer.writerows(products_data)
-    #             print(f"Successfully saved product data to CSV: {csv_filepath}")
-    #         else:
-    #             print("ℹNo product data found in the parsed result to write to CSV.")
-    #     except Exception as e:
-    #         print(f"Error saving to CSV: {e}")
-    import time
-
-    # ...existing code...
-
-    # 2. Define and create the output directory
-    output_dir = "output"
-    os.makedirs(output_dir, exist_ok=True)
-    print(f"Output directory '{output_dir}' is ready.")
-
-    # Generate a timestamp for unique filenames
-    timestamp = time.strftime("%Y%m%d_%H%M%S")
-
-    # 3. Save the parsed data to a JSON file (full result)
-    json_filepath = os.path.join(output_dir, f"agent_output_{timestamp}.json")
-    try:
-        with open(json_filepath, 'w', encoding='utf-8') as json_file:
-            json.dump(data, json_file, ensure_ascii=False, indent=4)
-        print(f"Successfully saved full result to JSON: {json_filepath}")
-    except Exception as e:
-        print(f"Error saving to JSON: {e}")
-
-    # Save only the extracted products list to JSON
-    json_products_filepath = os.path.join(output_dir, f"agent_products_{timestamp}.json")
-    try:
-        if 'products' in data and isinstance(data['products'], list):
-            products_to_save = data['products']
-            with open(json_products_filepath, 'w', encoding='utf-8') as json_file:
-                json.dump(products_to_save, json_file, ensure_ascii=False, indent=4)
-            print(f"Successfully saved EXTRACTED product list to JSON: {json_products_filepath}")
-        else:
-            print("ℹNo 'products' key found in the result. JSON file will not be created.")
-    except Exception as e:
-        print(f"Error saving extracted data to JSON: {e}")
-
-    # 4. Extract product data and save it to a CSV file
-    csv_filepath = os.path.join(output_dir, f"products_output_{timestamp}.csv")
-    try:
-        if 'products' in data and isinstance(data['products'], list) and data['products']:
-            products_data = data['products']
-            headers = products_data[0].keys()
-            with open(csv_filepath, 'w', newline='', encoding='utf-8') as csv_file:
-                writer = csv.DictWriter(csv_file, fieldnames=headers)
-                writer.writeheader()
-                writer.writerows(products_data)
-            print(f"Successfully saved product data to CSV: {csv_filepath}")
-        else:
-            print("ℹNo product data found in the parsed result to write to CSV.")
-    except Exception as e:
-        print(f"Error saving to CSV: {e}")
+        # 4. Extract product data and save it to a CSV file
+        csv_filepath = os.path.join(output_dir, f"products_output_{timestamp}.csv")
+        try:
+            if 'products' in data and isinstance(data['products'], list) and data['products']:
+                products_data = data['products']
+                headers = products_data[0].keys()
+                with open(csv_filepath, 'w', newline='', encoding='utf-8') as csv_file:
+                    writer = csv.DictWriter(csv_file, fieldnames=headers)
+                    writer.writeheader()
+                    writer.writerows(products_data)
+                print(f"Successfully saved product data to CSV: {csv_filepath}")
+            else:
+                print("ℹNo product data found in the parsed result to write to CSV.")
+        except Exception as e:
+            print(f"Error saving to CSV: {e}")
 
     except Exception as e:
-        # This will now also catch the json.JSONDecodeError if parsing fails
+            # This will now also catch the json.JSONDecodeError if parsing fails
         print(f"\nAn error occurred during the process: {e}")
 
     finally:
@@ -448,6 +425,8 @@ async def scrape_product_data(searchQuery: list, limit: int) -> list[ProductCrea
         print("Stopping browser...")
         await browser.stop()
         print("Browser stopped. Process finished.")
+    
+
 
 async def run_price_update_job():
     """
