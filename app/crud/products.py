@@ -37,7 +37,10 @@ def get_all_skus(db: Session) -> List[str]:
     print("Connecting to the database to get the list of SKUs...")
     try:
         # Query the 'sku' column from the 'Product' table
-        skus_in_db = db.query(models.Product.Sku).all()
+        skus_in_db = db.query(models.Product.Sku).filter(
+            models.Product.Published == 1,
+            models.Product.Deleted == 0
+        ).all()
 
         # The result from SQLAlchemy is a list of tuples: [('SKU1',), ('SKU2',)]
         # We need to flatten it into a simple list of strings: ['SKU1', 'SKU2']

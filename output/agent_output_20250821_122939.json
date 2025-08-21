@@ -1,0 +1,28 @@
+{
+    "products": [
+        {
+            "productName": "Laptop Dell Inspiron 3530 N5I5101W1 (i5 1334U/ 8GB/ 512GB SSD/ 15.6 inch FHD/ 120Hz/ Win 11/ Office/ Black/ 1Y)",
+            "sku": "N5I5101W1",
+            "brand": "Dell",
+            "finalPriceVND": 13900000,
+            "oldPriceVND": 17900000,
+            "stockStatus": "In Stock",
+            "retailer": "Truong Phat PC",
+            "url": "https://truongphatpc.com/laptop-dell-inspiron-3530-n5i5101w1-i5-1334u-8gb-512gb-ssd-15-6-inch-fhd-120hz-win-11-office-black-1y",
+            "category": "Laptop",
+            "scrapedAt": "2025-08-21T12:28:00Z"
+        },
+        {
+            "productName": "Laptop Dell Inspiron 3530 N5I5101W1 (i5 1334U/ 8GB/ 512GB SSD/ 15.6 inch FHD/ 120Hz/ Win 11/ Office/ Black/ 1Y)",
+            "sku": "N5I5101W1",
+            "brand": "Dell",
+            "finalPriceVND": 14400000,
+            "oldPriceVND": 17500000,
+            "stockStatus": "In Stock",
+            "retailer": "Hieu PC",
+            "url": "https://hieupc.com.vn/product/laptop-dell-inspiron-3530-n5i5101w1-i5-1334u-8gb-512gb-ssd-15-6-inch-fhd-120hz-win-11-office-black-1y",
+            "category": "Laptop",
+            "scrapedAt": "2025-08-21T12:28:00Z"
+        }
+    ]
+}
