@@ -57,6 +57,43 @@ def get_all_skus(db: Session) -> List[str]:
 def get_products(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Product).offset(skip).limit(limit).all()
 
+def update_price_for_sku(db: Session, sku: str, new_price: float):
+    """
+    Finds a product by its SKU and updates its 'OldPrice' column with a new price.
+
+    Args:
+        db (Session): The active SQLAlchemy database session.
+        sku (str): The SKU of the product to update.
+        new_price (float): The new price to set for the product's OldPrice.
+    """
+    print(f"DATABASE: Attempting to update SKU '{sku}' with new price: {new_price}...")
+    
+    try:
+        # Step 1: Find the product in the database that matches the SKU.
+        # We use .first() because we expect the SKU to be unique.
+        product_to_update = db.query(models.Product).filter(models.Product.Sku == sku).first()
+
+        # Step 2: Check if the product was actually found.
+        if product_to_update:
+            # Step 3a: If found, update the OldPrice field on the product object.
+            # IMPORTANT: This assumes your SQLAlchemy model's column is named 'OldPrice'.
+            # Adjust the field name if yours is different (e.g., product_to_update.old_price).
+            product_to_update.Price = new_price
+            
+            # Step 4: Commit the changes to the database to make them permanent.
+            db.commit()
+            
+            print(f"DATABASE: Successfully updated SKU '{sku}'. New OldPrice is now {new_price}.")
+        else:
+            # Step 3b: If no product was found, print a warning and do nothing.
+            print(f"DATABASE: SKU '{sku}' not found in the database. No update was performed.")
+
+    except Exception as e:
+        # Step 5: If any database error occurs during the process, roll back the transaction.
+        # This prevents the database from being left in a partially updated, inconsistent state.
+        print(f"DATABASE ERROR: Could not update SKU {sku}. Transaction rolled back. Error: {e}")
+        db.rollback()
+
 # Update product
 def update_product(db: Session, product_id: int, update: ProductUpdate):
     db_product = db.query(models.Product).filter(models.Product.id == product_id).first()

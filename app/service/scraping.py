@@ -17,7 +17,7 @@ from typing import Any
 from bs4 import BeautifulSoup
 import re
 import csv
-from app.crud.products import get_all_skus
+from app.crud.products import get_all_skus, update_price_for_sku
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 import time
 
@@ -313,7 +313,7 @@ async def scrape_product_data(searchQuery: list, limit: int) -> list[ProductCrea
     await browser.start()
 
     llm = ChatOpenAI(
-        model="gpt-5",
+        model="gpt-4.1-mini",
         temperature=0,
         api_key=OPENAI_API_KEY
     )
@@ -924,7 +924,7 @@ async def run_price_update_job():
                         new_price = cheapest_product['finalPriceVND']
                         
                         # Call the function to update the price in the DB
-                        # update_price_for_sku(db, sku=sku, new_price=new_price)
+                        update_price_for_sku(db, sku=sku, new_price=new_price)
                     else:
                         print(f"Scraped data for {sku} is malformed or missing 'finalPriceVND'. Skipping update.")
                 else:
@@ -939,6 +939,129 @@ async def run_price_update_job():
         # Ensure the database session is closed
         db.close()
         print("\n--- Price Update Job Completed ---")
+
+def load_products_from_json(filepath: str) -> List[Dict[str, Any]]:
+    """
+    Reads a product JSON file and returns the list of product dictionaries.
+
+    Args:
+        filepath (str): The path to the input JSON file.
+
+    Returns:
+        A list of product dictionaries, or an empty list if an error occurs.
+    """
+    print(f"FILE: Loading product data from '{filepath}'...")
+    try:
+        with open(filepath, 'r', encoding='utf-8') as file:
+            data = json.load(file)
+
+        if 'products' in data and isinstance(data['products'], list):
+            products = data['products']
+            print(f"FILE: Successfully loaded {len(products)} products from JSON.")
+            return products
+        else:
+            print("❌ FILE ERROR: JSON is missing a 'products' list.")
+            return []
+    
+    except FileNotFoundError:
+        print(f"❌ FILE ERROR: The file '{filepath}' was not found.")
+        return []
+    except json.JSONDecodeError:
+        print(f"❌ FILE ERROR: The file '{filepath}' is not a valid JSON file.")
+        return []
+
+    
+# def run_json_to_db_update_job(json_filepath: str):
+#     """
+#     Main job that reads a JSON file and updates product prices in the database.
+
+#     Args:
+#         json_filepath (str): Path to the source JSON file with product data.
+#     """
+#     print("\n--- Starting JSON to Database Price Update Job ---")
+#     db: Session = next(get_db())
+
+#     try:
+#         # 1. Load all product data from the JSON file
+#         products_from_json = load_products_from_json(json_filepath)
+        
+#         if not products_from_json:
+#             print("No products loaded from JSON. Exiting job.")
+#             return
+
+#         print(f"\nProcessing {len(products_from_json)} products from the file...")
+
+#         # 2. Loop through each product and update the database
+#         for product in products_from_json:
+#             # Safely get the sku and price from the product dictionary
+#             sku = product.get('sku')
+#             new_price = product.get('finalPriceVND')
+
+#             # Check if both sku and price exist before attempting an update
+#             if sku and new_price is not None:
+#                 # 3. Call the update function for each product
+#                 update_price_for_sku(db=db, sku=sku, new_price=new_price)
+#             else:
+#                 print(f"  ⚠️ FILE: Skipping product due to missing 'sku' or 'finalPriceVND': {product}")
+
+#     finally:
+#         # 4. Ensure the database session is always closed
+#         db.close()
+#         print("\n--- Job Finished. Database session closed. ---")
+
+def run_json_to_db_update_job(json_filepath: str):
+    """
+    Reads a JSON file, finds the single cheapest price for each unique SKU,
+    and then updates the database.
+
+    Args:
+        json_filepath (str): Path to the source JSON file with product data.
+    """
+    print("\n--- Starting JSON to Database Price Update Job ---")
+    db: Session = next(get_db())
+
+    try:
+        # 1. Load all product data from the JSON file
+        products_from_json = load_products_from_json(json_filepath)
+        
+        if not products_from_json:
+            print("No products loaded from JSON. Exiting job.")
+            return
+
+        # --- NEW LOGIC: AGGREGATION STEP ---
+        # 2. Find the cheapest price for each unique SKU in the file
+        cheapest_prices_per_sku = {}
+        print(f"\nProcessing {len(products_from_json)} products to find the cheapest price for each SKU...")
+
+        for product in products_from_json:
+            sku = product.get('sku')
+            price = product.get('finalPriceVND')
+
+            # Basic data validation: ensure SKU and price exist and price is a number
+            if sku and price is not None and isinstance(price, (int, float)):
+                # If we've never seen this SKU, or if the new price is lower than the stored price...
+                if sku not in cheapest_prices_per_sku or price < cheapest_prices_per_sku[sku]:
+                    # ...update the dictionary with the new lowest price.
+                    cheapest_prices_per_sku[sku] = price
+            else:
+                print(f"  ⚠️ FILE: Skipping product due to missing/invalid 'sku' or 'finalPriceVND': {product}")
+
+        if not cheapest_prices_per_sku:
+            print("No valid SKUs with prices found after aggregation. Exiting.")
+            return
+
+        print(f"\nFound {len(cheapest_prices_per_sku)} unique SKUs to update in the database.")
+        
+        # --- DATABASE UPDATE STEP ---
+        # 3. Loop through the aggregated cheapest prices and update the database
+        for sku, new_price in cheapest_prices_per_sku.items():
+            # Call the update function for each unique SKU with its cheapest price
+            update_price_for_sku(db=db, sku=sku, new_price=new_price)
+
+    finally:
+        # 4. Ensure the database session is always closed
+        db.close()
+        print("\n--- Job Finished. Database session closed. ---")
 
         
     
@@ -974,8 +1097,13 @@ if __name__ == "__main__":
     import asyncio
     # search_query = "30GS00G7VA"
     # limit = 2
-    loop = asyncio.get_event_loop()
-    products = loop.run_until_complete(run_price_update_job())
+    # loop = asyncio.get_event_loop()
+    # products = loop.run_until_complete(run_price_update_job())
+    # SOLUTION: 'r' makes it a raw string, ignoring backslashes
+    scraped_data_filepath = r'D:\PhatNguyen\Scraping-AI-Agent\output\agent_output_20250821_122939.json'
+    # Run the scraping job
+    run_json_to_db_update_job(json_filepath=scraped_data_filepath)
+      # Replace with your actual file path
 
 
 

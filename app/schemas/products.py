@@ -18,6 +18,10 @@ class ProductCreate(ProductBase):
 class ProductUpdate(ProductBase):
     pass
 
+class ProductUpdatePrice(BaseModel):
+    Price: float
+    OldPrice: Optional[float] = None
+
 class ProductOut(ProductBase):
     Id: int
     CreatedAt: datetime
