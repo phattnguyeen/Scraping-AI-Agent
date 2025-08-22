@@ -1,0 +1,52 @@
+{
+    "products": [
+        {
+            "productName": "Laptop Dell Inspiron 3530 N5I5101W1 (i5 1334U/ 8GB/ 512GB SSD/ 15.6 inch FHD/ 120Hz/ Win 11/ Office/ Black/ 1Y)",
+            "sku": "N5I5101W1",
+            "brand": "Dell",
+            "finalPriceVND": 15290000,
+            "oldPriceVND": null,
+            "stockStatus": "In Stock",
+            "retailer": "truongphatpc.com",
+            "url": "https://truongphatpc.com",
+            "category": "Laptop",
+            "scrapedAt": "2024-06-01T00:00:00Z"
+        },
+        {
+            "productName": "Laptop Dell Inspiron 15 3530 N5I5101W1 i5-1334U| 8GB| 512GB| 15.6\"FHD| OB| Win11+Office",
+            "sku": "N5I5101W1",
+            "brand": "Dell",
+            "finalPriceVND": 16390000,
+            "oldPriceVND": null,
+            "stockStatus": "In Stock",
+            "retailer": "loctai.com",
+            "url": "https://loctai.com",
+            "category": "Laptop",
+            "scrapedAt": "2024-06-01T00:00:00Z"
+        },
+        {
+            "productName": "Laptop Dell Inspiron 15 3530 (N5I5101W1-Black) | Intel Core i5 - 1334U | 8GB | 512GB | 15.6\" FHD - 120Hz | Win 11 - Office 2024 | 1224P",
+            "sku": "N5I5101W1",
+            "brand": "Dell",
+            "finalPriceVND": 16168900,
+            "oldPriceVND": null,
+            "stockStatus": "In Stock",
+            "retailer": "eaz.com.vn",
+            "url": "https://eaz.com.vn",
+            "category": "Laptop",
+            "scrapedAt": "2024-06-01T00:00:00Z"
+        },
+        {
+            "productName": "Laptop Dell Inspiron 15 3530 (Core i5 1334U, 8GB RAM, 512GB SSD, 15.6 inch FHD, 120Hz, Black, N5I5101W1)",
+            "sku": "N5I5101W1",
+            "brand": "Dell",
+            "finalPriceVND": 15840000,
+            "oldPriceVND": null,
+            "stockStatus": "In Stock",
+            "retailer": "hieupc.com.vn",
+            "url": "https://hieupc.com.vn",
+            "category": "Laptop",
+            "scrapedAt": "2024-06-01T00:00:00Z"
+        }
+    ]
+}

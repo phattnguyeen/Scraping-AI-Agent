@@ -674,6 +674,7 @@ async def scrape_product_data(searchQuery: list, limit: int) -> list[ProductCrea
         3. **Fallback – If Google blocked/inconclusive:**  
         * Use the **Master Combined Retailer List** (Laptop + Server).  
         * Do NOT retry Google if it fails; move forward immediately.  
+        4. **CRITICAL - HANDLE FAILURES:** If you are blocked by a **reCAPTCHA**, the search is inconclusive, or Google is otherwise unavailable, **IMMEDIATELY ABANDON THE PRIMARY PATH** and proceed directly to the **Fallback Path (Step 2)**. Do not waste time retrying Google.
 
         ---
         ## STEP 2: RETRIEVAL & EXTRACTION
@@ -723,9 +724,8 @@ async def scrape_product_data(searchQuery: list, limit: int) -> list[ProductCrea
         ## OUTPUT FORMAT
         ---
 
-        Final output MUST be valid JSON:
+        Final output MUST be valid JSON, the struceture is as follows:
 
-        ```json
         {{
         "products": [
             {{
@@ -742,9 +742,15 @@ async def scrape_product_data(searchQuery: list, limit: int) -> list[ProductCrea
             }}
         ]
         }}
-    ```
+    
+    -  Do NOT wrap the JSON in ```json or any markdown.  
+     - Do NOT output comments, explanations, or empty values.  
+     - Output must be **clean JSON string only**.
+     Create the agent with the browser, LLM, task instruction, and controller
+
     """
-    # Create the agent with the browser, LLM, task instruction, and controller
+    
+   
 
     agent = Agent(
         browser=browser,
@@ -771,8 +777,8 @@ async def scrape_product_data(searchQuery: list, limit: int) -> list[ProductCrea
             try:
                 print("Result is a string. Parsing from JSON...")
                 data = json.loads(raw_result)
-            except json.JSONDecodeError:
-                print(f"Critical Error: Agent result is not a valid JSON string. Cannot process.")
+            except json.JSONDecodeError as e:
+                print(f"Critical Error: Agent result is not a valid JSON string. Cannot process. Error: {e}")
                 raise  # Stop execution if JSON is invalid
         elif isinstance(raw_result, dict):
             # If it's already a dictionary, we can use it directly
@@ -910,26 +916,84 @@ async def run_price_update_job():
         for sku in skus_to_update:
             print(f"\n--- Processing SKU: {sku} ---")
             
+            # try:
+                # Scrape function returns a list of products
+                # cheapest_prices_per_sku = {}
+                # scraped_products = await scrape_product_data(searchQuery=sku, limit=4)
+                # for product in scraped_products:
+                #     sku = product.get('sku')
+                #     price = product.get('finalPriceVND')
+
+                #     # Basic data validation: ensure SKU and price exist and price is a number
+                #     if sku and price is not None and isinstance(price, (int, float)):
+                #         # If we've never seen this SKU, or if the new price is lower than the stored price...
+                #         if sku not in cheapest_prices_per_sku or price < cheapest_prices_per_sku[sku]:
+                #             # ...update the dictionary with the new lowest price.
+                #             cheapest_prices_per_sku[sku] = price
+                #     else:
+                #         print(f" FILE: Skipping product due to missing/invalid 'sku' or 'finalPriceVND': {product}")
+
+                # if not cheapest_prices_per_sku:
+                #     print("No valid SKUs with prices found after aggregation. Exiting.")
+                #     return
+
+                # print(f"\nFound {len(cheapest_prices_per_sku)} unique SKUs to update in the database.")
+                
+                # # --- DATABASE UPDATE STEP ---
+                # # 3. Loop through the aggregated cheapest prices and update the database
+                # for sku, new_price in cheapest_prices_per_sku.items():
+                #     # Call the update function for each unique SKU with its cheapest price
+                #     update_price_for_sku(db=db, sku=sku, new_price=new_price)
+                
+                # # 3. Check the result and update the database for the current SKU
+                # if scraped_products and isinstance(scraped_products, list) and len(scraped_products) > 0:
+                #     # Assuming the first result is the cheapest as per the prompt's sorting logic
+                #     cheapest_product = scraped_products[0]
+                #     print ("RAW CHEAPEST PRODUCT AHIHI:")
+                #     print(cheapest_product)
+                    
+                #     # Ensure the product dictionary and price key exist before accessing
+                #     if cheapest_product and 'finalPriceVND' in cheapest_product:
+                #         new_price = cheapest_product['finalPriceVND']
+                #         print (new_price)
+                        
+                #         # Call the function to update the price in the DB
+                #         update_price_for_sku(db, sku=sku, new_price=new_price)
+                #     else:
+                #         print(f"Scraped data for {sku} is malformed or missing 'finalPriceVND'. Skipping update.")
+                # else:
+                #     print(f"Scraping returned no results for SKU: {sku}. Skipping update.")
+            # ... (your existing code)
             try:
                 # Scrape function returns a list of products
+                cheapest_prices_per_sku = {}
                 scraped_products = await scrape_product_data(searchQuery=sku, limit=4)
                 
-                # 3. Check the result and update the database for the current SKU
-                if scraped_products and isinstance(scraped_products, list) and len(scraped_products) > 0:
-                    # Assuming the first result is the cheapest as per the prompt's sorting logic
-                    cheapest_product = scraped_products[0]
-                    
-                    # Ensure the product dictionary and price key exist before accessing
-                    if cheapest_product and 'finalPriceVND' in cheapest_product:
-                        new_price = cheapest_product['finalPriceVND']
-                        
-                        # Call the function to update the price in the DB
-                        update_price_for_sku(db, sku=sku, new_price=new_price)
-                    else:
-                        print(f"Scraped data for {sku} is malformed or missing 'finalPriceVND'. Skipping update.")
+                # ---- FIX: Add a check for None before iterating ----
+                if scraped_products:
+                    for product in scraped_products:
+                        sku_from_product = product.get('sku')
+                        price = product.get('finalPriceVND')
+
+                        # Basic data validation
+                        if sku_from_product and price is not None and isinstance(price, (int, float)):
+                            if sku_from_product not in cheapest_prices_per_sku or price < cheapest_prices_per_sku[sku_from_product]:
+                                cheapest_prices_per_sku[sku_from_product] = price
+                        else:
+                            print(f" FILE: Skipping product due to missing/invalid 'sku' or 'finalPriceVND': {product}")
                 else:
                     print(f"Scraping returned no results for SKU: {sku}. Skipping update.")
+                # ---------------------------------------------------
 
+                if not cheapest_prices_per_sku:
+                    print(f"No valid SKUs with prices found after aggregation for {sku}. Moving to next SKU.")
+                    continue # Use continue to proceed with the next SKU in the main loop
+
+                print(f"\nFound {len(cheapest_prices_per_sku)} unique SKUs to update in the database.")
+                
+                # --- DATABASE UPDATE STEP ---
+                for sku_to_update, new_price in cheapest_prices_per_sku.items():
+                    update_price_for_sku(db=db, sku=sku_to_update, new_price=new_price)
             except Exception as e:
                 print(f"An error occurred while processing SKU {sku}: {e}")
                 # Continue to the next SKU even if one fails
@@ -960,54 +1024,18 @@ def load_products_from_json(filepath: str) -> List[Dict[str, Any]]:
             print(f"FILE: Successfully loaded {len(products)} products from JSON.")
             return products
         else:
-            print("❌ FILE ERROR: JSON is missing a 'products' list.")
+            print("FILE ERROR: JSON is missing a 'products' list.")
             return []
     
     except FileNotFoundError:
-        print(f"❌ FILE ERROR: The file '{filepath}' was not found.")
+        print(f"FILE ERROR: The file '{filepath}' was not found.")
         return []
     except json.JSONDecodeError:
-        print(f"❌ FILE ERROR: The file '{filepath}' is not a valid JSON file.")
+        print(f"FILE ERROR: The file '{filepath}' is not a valid JSON file.")
         return []
 
     
-# def run_json_to_db_update_job(json_filepath: str):
-#     """
-#     Main job that reads a JSON file and updates product prices in the database.
 
-#     Args:
-#         json_filepath (str): Path to the source JSON file with product data.
-#     """
-#     print("\n--- Starting JSON to Database Price Update Job ---")
-#     db: Session = next(get_db())
-
-#     try:
-#         # 1. Load all product data from the JSON file
-#         products_from_json = load_products_from_json(json_filepath)
-        
-#         if not products_from_json:
-#             print("No products loaded from JSON. Exiting job.")
-#             return
-
-#         print(f"\nProcessing {len(products_from_json)} products from the file...")
-
-#         # 2. Loop through each product and update the database
-#         for product in products_from_json:
-#             # Safely get the sku and price from the product dictionary
-#             sku = product.get('sku')
-#             new_price = product.get('finalPriceVND')
-
-#             # Check if both sku and price exist before attempting an update
-#             if sku and new_price is not None:
-#                 # 3. Call the update function for each product
-#                 update_price_for_sku(db=db, sku=sku, new_price=new_price)
-#             else:
-#                 print(f"  ⚠️ FILE: Skipping product due to missing 'sku' or 'finalPriceVND': {product}")
-
-#     finally:
-#         # 4. Ensure the database session is always closed
-#         db.close()
-#         print("\n--- Job Finished. Database session closed. ---")
 
 def run_json_to_db_update_job(json_filepath: str):
     """
@@ -1044,7 +1072,7 @@ def run_json_to_db_update_job(json_filepath: str):
                     # ...update the dictionary with the new lowest price.
                     cheapest_prices_per_sku[sku] = price
             else:
-                print(f"  ⚠️ FILE: Skipping product due to missing/invalid 'sku' or 'finalPriceVND': {product}")
+                print(f" FILE: Skipping product due to missing/invalid 'sku' or 'finalPriceVND': {product}")
 
         if not cheapest_prices_per_sku:
             print("No valid SKUs with prices found after aggregation. Exiting.")
@@ -1097,12 +1125,12 @@ if __name__ == "__main__":
     import asyncio
     # search_query = "30GS00G7VA"
     # limit = 2
-    # loop = asyncio.get_event_loop()
-    # products = loop.run_until_complete(run_price_update_job())
+    loop = asyncio.get_event_loop()
+    products = loop.run_until_complete(run_price_update_job())
     # SOLUTION: 'r' makes it a raw string, ignoring backslashes
-    scraped_data_filepath = r'D:\PhatNguyen\Scraping-AI-Agent\output\agent_output_20250821_122939.json'
-    # Run the scraping job
-    run_json_to_db_update_job(json_filepath=scraped_data_filepath)
+    # scraped_data_filepath = r'D:\PhatNguyen\Scraping-AI-Agent\output\agent_output_20250821_112405.json'
+    # # Run the scraping job
+    # run_json_to_db_update_job(json_filepath=scraped_data_filepath)
       # Replace with your actual file path
 
 

@@ -25,24 +25,7 @@ metadata = MetaData()
 # metadata.reflect(engine)
 # metadata.reflect(bind=engine)
 
-# # Load CrawledProduct table
-# try:
-#     CrawledProduct = Table("CrawledProduct", metadata, autoload_with=engine)
 
-#     # Run test query: select Id, ProductName, Price
-#     with engine.connect() as conn:
-#         stmt = select(
-#             CrawledProduct.c.Id,
-#             CrawledProduct.c.ProductName,
-#             CrawledProduct.c.Price
-#         ).limit(5)
-
-#         result = conn.execute(stmt)
-#         for row in result:
-#             print(row)
-
-# except Exception as e:
-#     print("❌ Error:", e)
 
 # finally:
 #     session.close()

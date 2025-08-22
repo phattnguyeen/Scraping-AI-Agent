@@ -83,7 +83,7 @@ def update_price_for_sku(db: Session, sku: str, new_price: float):
             # Step 4: Commit the changes to the database to make them permanent.
             db.commit()
             
-            print(f"DATABASE: Successfully updated SKU '{sku}'. New OldPrice is now {new_price}.")
+            print(f"DATABASE: Successfully updated SKU '{sku}'. New Price is now {new_price}.")
         else:
             # Step 3b: If no product was found, print a warning and do nothing.
             print(f"DATABASE: SKU '{sku}' not found in the database. No update was performed.")

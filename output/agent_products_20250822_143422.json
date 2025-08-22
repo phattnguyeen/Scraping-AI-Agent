@@ -1,0 +1,50 @@
+[
+    {
+        "productName": "LENOVO THINKSTATION P3 TOWER I7-14700 16GB RAM 512GB SSD NVIDIA T400 4GB WIFI BT NO OS 3 YRS 30GS00G7VA",
+        "sku": "30GS00G7VA",
+        "brand": "Lenovo",
+        "finalPriceVND": 38610000,
+        "oldPriceVND": null,
+        "stockStatus": "In Stock",
+        "retailer": "Hitech Pro",
+        "url": "https://websosanh.vn/s/30gs00g7va.htm",
+        "category": "Server",
+        "scrapedAt": "2025-08-22T14:33:00Z"
+    },
+    {
+        "productName": "Máy trạm Lenovo ThinkStation P3 Tower 30GS00G7VA",
+        "sku": "30GS00G7VA",
+        "brand": "Lenovo",
+        "finalPriceVND": 39369000,
+        "oldPriceVND": null,
+        "stockStatus": "In Stock",
+        "retailer": "Kigimart",
+        "url": "https://websosanh.vn/s/30gs00g7va.htm",
+        "category": "Server",
+        "scrapedAt": "2025-08-22T14:33:00Z"
+    },
+    {
+        "productName": "Máy trạm Workstation Lenovo ThinkStation P3 Tower",
+        "sku": "30GS00G7VA",
+        "brand": "Lenovo",
+        "finalPriceVND": 38379000,
+        "oldPriceVND": null,
+        "stockStatus": "In Stock",
+        "retailer": "Vitinhrachgia",
+        "url": "https://websosanh.vn/s/30gs00g7va.htm",
+        "category": "Server",
+        "scrapedAt": "2025-08-22T14:33:00Z"
+    },
+    {
+        "productName": "PC Lenovo Workstation ThinkStation P3 Tower",
+        "sku": "30GS00G7VA",
+        "brand": "Lenovo",
+        "finalPriceVND": 39204000,
+        "oldPriceVND": null,
+        "stockStatus": "In Stock",
+        "retailer": "Laptopworld",
+        "url": "https://websosanh.vn/s/30gs00g7va.htm",
+        "category": "Server",
+        "scrapedAt": "2025-08-22T14:33:00Z"
+    }
+]

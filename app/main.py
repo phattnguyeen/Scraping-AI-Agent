@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from browser_use import Browser, Agent, BrowserConfig
 from browser_use.llm import ChatOpenAI
 from browser_use import BrowserSession, Controller, ActionResult
-from app.service.scraping3 import save_product_to_db, scraping_products
+from app.service.scraping import scraping_products, update_price_for_sku
 from app.db.create import get_db
 import uvicorn
 

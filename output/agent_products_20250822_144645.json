@@ -1,0 +1,50 @@
+[
+    {
+        "productName": "Laptop Dell Inspiron 3530 N5I5101W1 i5 1334U 8GB 512GB SSD 15.6 inch FHD 120Hz Win 11 Office Black 1Y",
+        "sku": "N5I5101W1",
+        "brand": "Dell",
+        "finalPriceVND": 15290000,
+        "oldPriceVND": null,
+        "stockStatus": "In Stock",
+        "retailer": "truongphatpc.com",
+        "url": null,
+        "category": "Laptop",
+        "scrapedAt": "2024-06-01T00:00:00Z"
+    },
+    {
+        "productName": "Laptop Dell Inspiron 15 3530 N5I5101W1 i5-1334U 8GB 512GB 15.6 FHD OB Win11 Office",
+        "sku": "N5I5101W1",
+        "brand": "Dell",
+        "finalPriceVND": 16390000,
+        "oldPriceVND": null,
+        "stockStatus": "In Stock",
+        "retailer": "loctai.com",
+        "url": null,
+        "category": "Laptop",
+        "scrapedAt": "2024-06-01T00:00:00Z"
+    },
+    {
+        "productName": "Laptop Dell Inspiron 15 3530 N5I5101W1 Black",
+        "sku": "N5I5101W1",
+        "brand": "Dell",
+        "finalPriceVND": 17699000,
+        "oldPriceVND": null,
+        "stockStatus": "In Stock",
+        "retailer": "nova.com.vn",
+        "url": null,
+        "category": "Laptop",
+        "scrapedAt": "2024-06-01T00:00:00Z"
+    },
+    {
+        "productName": "Laptop Dell Inspiron 15 3530 N5I5101W1 Black",
+        "sku": "N5I5101W1",
+        "brand": "Dell",
+        "finalPriceVND": 19789000,
+        "oldPriceVND": null,
+        "stockStatus": "In Stock",
+        "retailer": "kigimart.com",
+        "url": null,
+        "category": "Laptop",
+        "scrapedAt": "2024-06-01T00:00:00Z"
+    }
+]

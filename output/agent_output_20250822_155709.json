@@ -1,0 +1,28 @@
+{
+    "products": [
+        {
+            "productName": "Lenovo ThinkStation P3 Tower",
+            "sku": "30GS00G7VA",
+            "brand": "Lenovo",
+            "finalPriceVND": 31950000,
+            "oldPriceVND": null,
+            "stockStatus": "In Stock",
+            "retailer": "NOVA",
+            "url": "https://www.nova.com.vn/cm-may-vi-tinh/may-tram-lenovo-thinkstation-p3-tower-30gs00g7va/31600/5",
+            "category": "Server",
+            "scrapedAt": "2024-06"
+        },
+        {
+            "productName": "Lenovo ThinkStation P3 Tower",
+            "sku": "30GS00G7VA",
+            "brand": "Lenovo",
+            "finalPriceVND": 34500000,
+            "oldPriceVND": 34680000,
+            "stockStatus": "In Stock",
+            "retailer": "ATI",
+            "url": "https://ativn.com/lenovo-thinkstation-p3-tower-30gs00g7va",
+            "category": "Server",
+            "scrapedAt": "2024-06"
+        }
+    ]
+}

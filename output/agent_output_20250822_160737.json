@@ -1,0 +1,16 @@
+{
+    "products": [
+        {
+            "productName": "Laptop Dell Inspiron 15 3530 N5I5101W1",
+            "sku": "N5I5101W1",
+            "brand": "Dell",
+            "finalPriceVND": 15290000,
+            "oldPriceVND": null,
+            "stockStatus": "In Stock",
+            "retailer": "Multiple retailers",
+            "url": null,
+            "category": "Laptop",
+            "scrapedAt": "2024-06"
+        }
+    ]
+}
